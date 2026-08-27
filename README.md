@@ -1,2 +1,9 @@
-# _co
-計算機結構 -- 學生作業與專案
+# 課程：計算機結構 -- 學生作業與專案
+
+欄位 | 內容
+-----|--------
+學期 | 115 學年下學期
+教師 | [陳鍾誠](https://www.nqu.edu.tw/educsie/index.php?act=blog&code=list&ids=4)
+學校 | [金門大學資訊工程系](https://www.nqu.edu.tw/educsie/index.php)
+學生 | xxx
+學號 | xx
