@@ -1,17 +1,27 @@
 // This file is part of www.nand2tetris.org
 // and the book "The Elements of Computing Systems"
 // by Nisan and Schocken, MIT Press.
-// File name: projects/01/Or8Way.hdl
-
+// File name: projects/1/Or8Way.hdl
 /**
- * 8-way Or: 
- * out = (in[0] or in[1] or ... or in[7])
+ * 8-way Or gate: 
+ * out = in[0] Or in[1] Or ... Or in[7]
  */
-
 CHIP Or8Way {
     IN in[8];
     OUT out;
 
     PARTS:
-    // Put your code here:
+    //// Replace this comment with your code.
+    // 第一層：相鄰的兩兩做 OR，產生 4 個中間結果
+    Or(a=in[0], b=in[1], out=or01);
+    Or(a=in[2], b=in[3], out=or23);
+    Or(a=in[4], b=in[5], out=or45);
+    Or(a=in[6], b=in[7], out=or67);
+    
+    // 第二層：把上一層的結果再兩兩做 OR，變成 2 個
+    Or(a=or01, b=or23, out=or0123);
+    Or(a=or45, b=or67, out=or4567);
+    
+    // 最終決賽：把最後的兩個結果 OR 起來，就得到最終輸出啦！
+    Or(a=or0123, b=or4567, out=out);
 }

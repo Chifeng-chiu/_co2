@@ -1,17 +1,21 @@
 // This file is part of www.nand2tetris.org
 // and the book "The Elements of Computing Systems"
 // by Nisan and Schocken, MIT Press.
-// File name: projects/2/ALU.tst
+// File name: projects/2/ALU-basic.tst
+
+// Tests the basic version of the ALU chip.
+// DOES NOT replace the final test provided by ALU.tst.
+// Specifically: Tests the ALU logic that computes the 'out' output;
+// The 'zr' and 'ng' output bits are ignored.
 
 load ALU.hdl,
-output-file ALU.out,
-compare-to ALU.cmp,
-output-list x%B1.16.1 y%B1.16.1 zx nx zy ny f no out%B1.16.1 zr ng;
+output-file ALU-basic.out,
+compare-to ALU-basic.cmp,
+output-list x%B1.16.1 y%B1.16.1 zx nx zy ny f no out%B1.16.1;
 
-set x %B0000000000000000,  // x = 0
-set y %B1111111111111111;  // y = -1
+set x %B0000000000000000,
+set y %B1111111111111111,
 
-// Compute 0
 set zx 1,
 set nx 0,
 set zy 1,
@@ -21,7 +25,6 @@ set no 0,
 eval,
 output;
 
-// Compute 1
 set zx 1,
 set nx 1,
 set zy 1,
@@ -31,7 +34,6 @@ set no 1,
 eval,
 output;
 
-// Compute -1
 set zx 1,
 set nx 1,
 set zy 1,
@@ -41,7 +43,6 @@ set no 0,
 eval,
 output;
 
-// Compute x
 set zx 0,
 set nx 0,
 set zy 1,
@@ -51,7 +52,6 @@ set no 0,
 eval,
 output;
 
-// Compute y
 set zx 1,
 set nx 1,
 set zy 0,
@@ -61,7 +61,6 @@ set no 0,
 eval,
 output;
 
-// Compute !x
 set zx 0,
 set nx 0,
 set zy 1,
@@ -71,7 +70,6 @@ set no 1,
 eval,
 output;
 
-// Compute !y
 set zx 1,
 set nx 1,
 set zy 0,
@@ -81,7 +79,6 @@ set no 1,
 eval,
 output;
 
-// Compute -x
 set zx 0,
 set nx 0,
 set zy 1,
@@ -91,7 +88,6 @@ set no 1,
 eval,
 output;
 
-// Compute -y
 set zx 1,
 set nx 1,
 set zy 0,
@@ -101,7 +97,6 @@ set no 1,
 eval,
 output;
 
-// Compute x + 1
 set zx 0,
 set nx 1,
 set zy 1,
@@ -111,7 +106,6 @@ set no 1,
 eval,
 output;
 
-// Compute y + 1
 set zx 1,
 set nx 1,
 set zy 0,
@@ -121,7 +115,6 @@ set no 1,
 eval,
 output;
 
-// Compute x - 1
 set zx 0,
 set nx 0,
 set zy 1,
@@ -131,7 +124,6 @@ set no 0,
 eval,
 output;
 
-// Compute y - 1
 set zx 1,
 set nx 1,
 set zy 0,
@@ -141,7 +133,6 @@ set no 0,
 eval,
 output;
 
-// Compute x + y
 set zx 0,
 set nx 0,
 set zy 0,
@@ -151,7 +142,6 @@ set no 0,
 eval,
 output;
 
-// Compute x - y
 set zx 0,
 set nx 1,
 set zy 0,
@@ -161,7 +151,6 @@ set no 1,
 eval,
 output;
 
-// Compute y - x
 set zx 0,
 set nx 0,
 set zy 0,
@@ -171,7 +160,6 @@ set no 1,
 eval,
 output;
 
-// Compute x & y
 set zx 0,
 set nx 0,
 set zy 0,
@@ -181,7 +169,6 @@ set no 0,
 eval,
 output;
 
-// Compute x | y
 set zx 0,
 set nx 1,
 set zy 0,
@@ -191,10 +178,9 @@ set no 1,
 eval,
 output;
 
-set x %B000000000010001,  // x = 17
-set y %B000000000000011;  // y =  3
+set x %B101101110100000,
+set y %B001111011010010,
 
-// Compute 0
 set zx 1,
 set nx 0,
 set zy 1,
@@ -204,7 +190,6 @@ set no 0,
 eval,
 output;
 
-// Compute 1
 set zx 1,
 set nx 1,
 set zy 1,
@@ -214,7 +199,6 @@ set no 1,
 eval,
 output;
 
-// Compute -1
 set zx 1,
 set nx 1,
 set zy 1,
@@ -224,7 +208,6 @@ set no 0,
 eval,
 output;
 
-// Compute x
 set zx 0,
 set nx 0,
 set zy 1,
@@ -234,7 +217,6 @@ set no 0,
 eval,
 output;
 
-// Compute y
 set zx 1,
 set nx 1,
 set zy 0,
@@ -244,7 +226,6 @@ set no 0,
 eval,
 output;
 
-// Compute !x
 set zx 0,
 set nx 0,
 set zy 1,
@@ -254,7 +235,6 @@ set no 1,
 eval,
 output;
 
-// Compute !y
 set zx 1,
 set nx 1,
 set zy 0,
@@ -264,7 +244,6 @@ set no 1,
 eval,
 output;
 
-// Compute -x
 set zx 0,
 set nx 0,
 set zy 1,
@@ -274,7 +253,6 @@ set no 1,
 eval,
 output;
 
-// Compute -y
 set zx 1,
 set nx 1,
 set zy 0,
@@ -284,7 +262,6 @@ set no 1,
 eval,
 output;
 
-// Compute x + 1
 set zx 0,
 set nx 1,
 set zy 1,
@@ -294,7 +271,6 @@ set no 1,
 eval,
 output;
 
-// Compute y + 1
 set zx 1,
 set nx 1,
 set zy 0,
@@ -304,7 +280,6 @@ set no 1,
 eval,
 output;
 
-// Compute x - 1
 set zx 0,
 set nx 0,
 set zy 1,
@@ -314,7 +289,6 @@ set no 0,
 eval,
 output;
 
-// Compute y - 1
 set zx 1,
 set nx 1,
 set zy 0,
@@ -324,7 +298,6 @@ set no 0,
 eval,
 output;
 
-// Compute x + y
 set zx 0,
 set nx 0,
 set zy 0,
@@ -334,7 +307,6 @@ set no 0,
 eval,
 output;
 
-// Compute x - y
 set zx 0,
 set nx 1,
 set zy 0,
@@ -344,7 +316,6 @@ set no 1,
 eval,
 output;
 
-// Compute y - x
 set zx 0,
 set nx 0,
 set zy 0,
@@ -354,7 +325,6 @@ set no 1,
 eval,
 output;
 
-// Compute x & y
 set zx 0,
 set nx 0,
 set zy 0,
@@ -364,7 +334,6 @@ set no 0,
 eval,
 output;
 
-// Compute x | y
 set zx 0,
 set nx 1,
 set zy 0,
