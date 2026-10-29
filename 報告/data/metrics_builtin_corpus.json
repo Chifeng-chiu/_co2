@@ -1,0 +1,99 @@
+﻿{
+  "ALU": {
+    "inputs": 38,
+    "outputs": 18,
+    "rawNand": 1278,
+    "optNand": 1174,
+    "lut4": 177,
+    "dff": 0,
+    "fpga": {
+      "grid": "18x18",
+      "wireMedian": 1891,
+      "fmaxMedian": 30,
+      "critMedian": 33.35,
+      "critBest": 30,
+      "fmaxWorst": 30
+    },
+    "asic": {
+      "cellCount": 594,
+      "types": {
+        "INV": 295,
+        "NAND2": 127,
+        "AOI21": 77,
+        "MUX2": 95
+      },
+      "areaUm2": 1175.4,
+      "rows": 111,
+      "wireUm": 22737.5,
+      "critNs": 21.16,
+      "fmax": 47.3,
+      "slackSetup": null,
+      "slackHold": null
+    }
+  },
+  "CPU": {
+    "inputs": 33,
+    "outputs": 47,
+    "rawNand": 2632,
+    "optNand": 2176,
+    "lut4": 344,
+    "dff": 48,
+    "fpga": {
+      "grid": "26x26",
+      "wireMedian": 4070,
+      "fmaxMedian": 22,
+      "critMedian": 45.55,
+      "critBest": 22,
+      "fmaxWorst": 22
+    },
+    "asic": {
+      "cellCount": 1348,
+      "types": {
+        "INV": 640,
+        "NAND2": 309,
+        "MUX2": 158,
+        "DFF": 48,
+        "AOI21": 193
+      },
+      "areaUm2": 2891.6,
+      "rows": 139,
+      "wireUm": 91708.5,
+      "critNs": 28.75,
+      "fmax": 34.8,
+      "slackSetup": null,
+      "slackHold": null
+    }
+  },
+  "Inc16": {
+    "inputs": 16,
+    "outputs": 16,
+    "rawNand": 384,
+    "optNand": 224,
+    "lut4": 60,
+    "dff": 0,
+    "fpga": {
+      "grid": "10x10",
+      "wireMedian": 69,
+      "fmaxMedian": 23,
+      "critMedian": 43.5,
+      "critBest": 23,
+      "fmaxWorst": 23
+    },
+    "asic": {
+      "cellCount": 174,
+      "types": {
+        "NAND2": 65,
+        "AOI21": 16,
+        "INV": 78,
+        "MUX2": 15
+      },
+      "areaUm2": 319.2,
+      "rows": 66,
+      "wireUm": 1705.3,
+      "critNs": 12.35,
+      "fmax": 81,
+      "slackSetup": null,
+      "slackHold": null
+    }
+  }
+}

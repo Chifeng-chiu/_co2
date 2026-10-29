@@ -1,0 +1,129 @@
+﻿{
+  "ALU": {
+    "inputs": 38,
+    "outputs": 18,
+    "rawNand": 1279,
+    "optNand": 1183,
+    "lut4": 209,
+    "dff": 0,
+    "fpga": {
+      "grid": "19x19",
+      "wireMedian": 2577,
+      "fmaxMedian": 32.8,
+      "critMedian": 30.45,
+      "critBest": 32.8,
+      "fmaxWorst": 32.8
+    },
+    "asic": {
+      "cellCount": 499,
+      "types": {
+        "INV": 234,
+        "NAND2": 109,
+        "AOI21": 61,
+        "MUX2": 95
+      },
+      "areaUm2": 1027.2,
+      "rows": 78,
+      "wireUm": 16034.1,
+      "critNs": 14.83,
+      "fmax": 67.4,
+      "slackSetup": null,
+      "slackHold": null
+    }
+  },
+  "CPU": {
+    "inputs": 33,
+    "outputs": 47,
+    "rawNand": 2589,
+    "optNand": 2208,
+    "lut4": 372,
+    "dff": 48,
+    "fpga": {
+      "grid": "27x27",
+      "wireMedian": 5062,
+      "fmaxMedian": 26.1,
+      "critMedian": 38.3,
+      "critBest": 26.1,
+      "fmaxWorst": 26.1
+    },
+    "asic": {
+      "cellCount": 1205,
+      "types": {
+        "INV": 535,
+        "MUX2": 158,
+        "DFF": 48,
+        "NAND2": 273,
+        "AOI21": 191
+      },
+      "areaUm2": 2708.2,
+      "rows": 106,
+      "wireUm": 57764.5,
+      "critNs": 22.19,
+      "fmax": 45.1,
+      "slackSetup": null,
+      "slackHold": null
+    }
+  },
+  "Inc16": {
+    "inputs": 16,
+    "outputs": 16,
+    "rawNand": 385,
+    "optNand": 276,
+    "lut4": 44,
+    "dff": 0,
+    "fpga": {
+      "grid": "9x9",
+      "wireMedian": 29,
+      "fmaxMedian": 46,
+      "critMedian": 21.75,
+      "critBest": 46,
+      "fmaxWorst": 46
+    },
+    "asic": {
+      "cellCount": 153,
+      "types": {
+        "INV": 47,
+        "NAND2": 61,
+        "AOI21": 30,
+        "MUX2": 15
+      },
+      "areaUm2": 325,
+      "rows": 63,
+      "wireUm": 2600.1,
+      "critNs": 11.9,
+      "fmax": 84,
+      "slackSetup": null,
+      "slackHold": null
+    }
+  },
+  "And": {
+    "inputs": 2,
+    "outputs": 1,
+    "rawNand": 2,
+    "optNand": 2,
+    "lut4": 1,
+    "dff": 0,
+    "fpga": {
+      "grid": "4x4",
+      "wireMedian": 4,
+      "fmaxMedian": 689.7,
+      "critMedian": 1.45,
+      "critBest": 689.7,
+      "fmaxWorst": 689.7
+    },
+    "asic": {
+      "cellCount": 2,
+      "types": {
+        "NAND2": 1,
+        "INV": 1
+      },
+      "areaUm2": 3,
+      "rows": 3,
+      "wireUm": 2.2,
+      "critNs": 0.3,
+      "fmax": 3311.3,
+      "slackSetup": null,
+      "slackHold": null
+    }
+  }
+}

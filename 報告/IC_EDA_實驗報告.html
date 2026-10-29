@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>使用開源 IC EDA 軟體進行邏輯合成與實體設計之實驗報告</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm; }
+  :root { --fg:#1a1a1a; --sub:#555; --line:#d0d4d9; --accent:#0b5cad; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", system-ui, sans-serif;
+    color: var(--fg); line-height: 1.75; font-size: 10.5pt;
+    max-width: 820px; margin: 0 auto; padding: 24px 20px 60px;
+    background:#fff;
+  }
+  h1 { font-size: 19pt; line-height:1.4; margin: 0 0 18px; padding-bottom: 10px; border-bottom: 3px solid var(--accent); }
+  h2 { font-size: 13.5pt; margin: 28px 0 10px; padding-left: 8px; border-left: 5px solid var(--accent); page-break-after: avoid; }
+  h3 { font-size: 11.5pt; margin: 20px 0 8px; color: #123; page-break-after: avoid; }
+  p { margin: 8px 0; text-align: justify; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0 16px; font-size: 9pt; page-break-inside: avoid; }
+  th, td { border: 1px solid var(--line); padding: 5px 7px; text-align: left; vertical-align: top; }
+  td:first-child { min-width: 5.2em; }
+  th { background: #eef3f9; font-weight: 600; }
+  tbody tr:nth-child(even) { background: #fafbfc; }
+  code { background: #f2f4f6; padding: 1px 5px; border-radius: 3px; font-size: 9pt;
+         font-family: "Cascadia Mono", Consolas, "Courier New", monospace; }
+  pre { background: #1f2430; color: #e6e6e6; padding: 12px 14px; border-radius: 6px; overflow-x: auto;
+        font-size: 8.6pt; line-height: 1.55; page-break-inside: avoid; }
+  pre code { background: none; color: inherit; padding: 0; }
+  figure { margin: 14px 0 18px; page-break-inside: avoid; }
+  img { max-width: 100%; display: block; margin: 0 auto; border: 1px solid var(--line); border-radius: 4px; }
+  figcaption { font-size: 8.6pt; color: #555; text-align: center; margin-top: 6px; line-height: 1.5; }
+  em { color: var(--sub); }
+  blockquote { margin: 10px 0; padding: 8px 14px; background: #f7f9fb; border-left: 4px solid #9bb8d3; color: #334; }
+  hr { border: 0; border-top: 1px solid var(--line); margin: 26px 0; }
+  ul, ol { padding-left: 22px; }
+  li { margin: 4px 0; }
+  a { color: var(--accent); text-decoration: none; word-break: break-all; }
+  @media print { body { max-width: none; padding: 0; font-size: 10pt; } a { color: #000; } }
+</style>
+</head>
+<body>
+<p>﻿# 使用開源 IC EDA 軟體進行邏輯合成與實體設計之實驗報告</p>
+<table>
+<thead>
+<tr>
+<th>項目</th>
+<th>內容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>課程</td>
+<td>計算機結構</td>
+</tr>
+<tr>
+<td>姓名／學號</td>
+<td>郭鎮瑋／111410543</td>
+</tr>
+<tr>
+<td>實驗日期</td>
+<td>2026 年 10 月 29 日</td>
+</tr>
+<tr>
+<td>實驗工具</td>
+<td>hack-computer（HDL 模擬器＋迷你 EDA）、veryl2chip IDE（Veryl → FPGA/ASIC）</td>
+</tr>
+<tr>
+<td>實驗電路</td>
+<td>自製 nand2tetris <code>ALU.hdl</code>（專案 2）、<code>CPU.hdl</code>（專案 5）</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>摘要</h2>
+<p>本實驗使用兩套<strong>開源 IC EDA 軟體</strong>，把自己在 nand2tetris 課程寫的 Hack 處理器電路，從高階硬體描述（HDL）一路做到實體佈局：先以 HDL 模擬器驗證功能，再經過 <strong>RTL→邏輯閘（NAND/DFF）→邏輯最佳化→LUT4 或標準元件映射→佈局（模擬退火）→繞線→靜態時序分析（STA）</strong> 的完整流程，得到 FPGA 與 ASIC 兩種後端的閘數、面積、線長、關鍵路徑與最高操作頻率，並以 20,000 組隨機向量證明合成前後電路功能等價。</p>
+<p>主要結果：自製 ALU 由 1,279 個 NAND 閘最佳化為 1,183 閘，映射成 209 個 LUT4，FPGA 版關鍵路徑 30.45 ns（32.8 MHz）；ASIC 版 499 個標準元件、面積 1,027.2 µm²、關鍵路徑 14.83 ns（67.4 MHz）。自製 CPU 含 48 個 DFF，映射成 372 個 LUT4＋48 個 DFF，FPGA 版 Fmax 26.1 MHz、ASIC 版 45.1 MHz。所有合成後網表的等效性驗證錯誤數皆為 <strong>0</strong>。</p>
+<hr>
+<h2>一、實驗目的</h2>
+<ol>
+<li>了解 IC 設計從 RTL 到實體佈局的完整 EDA 流程，以及每一階段「輸入什麼、輸出什麼、用什麼演算法」。</li>
+<li>實際操作 EDA 軟體，觀察<strong>邏輯最佳化、技術映射（tech mapping）、佈局與繞線</strong>對電路品質（閘數、面積、線長、頻率）的影響。</li>
+<li>比較 <strong>FPGA（LUT 架構）與 ASIC（標準元件）</strong> 兩種實現方式的差異。</li>
+<li>驗證合成後網表與原始 RTL 的功能等價性（formal/random equivalence check 的簡化版）。</li>
+</ol>
+<h2>二、實驗環境與工具</h2>
+<table>
+<thead>
+<tr>
+<th>項目</th>
+<th>規格</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>作業系統</td>
+<td>Windows 11</td>
+</tr>
+<tr>
+<td>執行環境</td>
+<td>Node.js v24.14.0（命令列流程）、Google Chrome（瀏覽器流程）</td>
+</tr>
+<tr>
+<td>工具 A</td>
+<td><strong>hack-computer</strong>（<code>ccc-js/hack-computer</code>，MIT，純 ESM 零依賴）：<code>dist/hdl.html</code> 網頁版＋<code>lib/fpga</code>、<code>lib/asic</code> 函式庫</td>
+</tr>
+<tr>
+<td>工具 B</td>
+<td><strong>veryl2chip IDE</strong>（<code>ccc-eda/veryl2chip</code>，MIT，Rust→WebAssembly）：<code>web/dist/index.html</code></td>
+</tr>
+<tr>
+<td>設計語言</td>
+<td>Hack HDL（nand2tetris）、Veryl（工具 B 範例）</td>
+</tr>
+</tbody></table>
+<p>選這兩套工具的原因：</p>
+<ul>
+<li>兩者都是<strong>開源、免安裝、可重現</strong>，不需要商用授權（Synopsys/Cadence）就能走完「合成→佈局→繞線→時序」。</li>
+<li>工具 A 有命令列，能把每一個中間結果輸出成 JSON，適合做量化分析；工具 B 有完整 GUI 與 WebAssembly 合成引擎，適合觀察與交叉驗證。</li>
+<li>兩者的流程階段刻意對齊業界（① RTL→Logic → ② Netlist → ③ 技術無關最佳化 → ④ Techmap → ⑤ Placement → ⑥ Routing → ⑦ STA），概念上與 Cornell ECE 5745 的 Topic 12（合成演算法）、Topic 13（實體設計演算法）相同。</li>
+</ul>
+<h2>三、實驗對象</h2>
+<h3>3.1 自製 Hack CPU 的資料流</h3>
+<p>本實驗對象的資料流如下：A 暫存器輸出同時作為 <strong>ALU 的 y 輸入</strong>（經 <code>Mux16</code>，由 <code>instruction[12]</code> 選擇 A 或 <code>inM</code>）與<strong>資料記憶體位址</strong>（<code>addressM = A[0..14]</code>）；D 暫存器接 ALU 的 x 輸入；ALU 的輸出依 <code>instruction[5]</code>（d1）決定是否寫回 A、依 <code>instruction[4]</code>（d2）寫回 D；<code>instruction[3]</code>（d3）為 <code>writeM</code>；<code>instruction[0..2]</code>（j1/j2/j3）與 ALU 的 <code>zr/ng</code>（經 <code>pos = !(zr|ng)</code>）一起決定 <code>loadPC</code>；<code>reset</code> 則直接清除 PC。</p>
+<p>對應的 HDL 就是本次送進 EDA 工具的 <code>CPU.hdl</code>：</p>
+<pre><code class="language-hdl">CHIP CPU {
+    IN  inM[16], instruction[16], reset;
+    OUT outM[16], writeM, addressM[15], pc[15];
+    PARTS:
+    Not(in=instruction[15], out=isA);
+    Not(in=isA, out=isC);
+    And(a=isC, b=instruction[5], out=ALUtoA);
+    Mux16(a=instruction, b=outALU, sel=ALUtoA, out=inA);
+    Or(a=isA, b=ALUtoA, out=loadA);
+    ARegister(in=inA, load=loadA, out=outA, out[0..14]=addressM);
+    Mux16(a=outA, b=inM, sel=instruction[12], out=inAM);
+    And(a=isC, b=instruction[4], out=loadD);
+    DRegister(in=outALU, load=loadD, out=outD);
+    ALU(x=outD, y=inAM, zx=instruction[11], nx=instruction[10],
+        zy=instruction[9], ny=instruction[8], f=instruction[7], no=instruction[6],
+        out=outALU, out=outM, zr=zr, ng=ng);
+    And(a=isC, b=instruction[3], out=writeM);
+    ...（跳躍判斷：pos/jgt/jeq/jlt → loadPC）
+    PC(in=outA, load=loadPC, inc=true, reset=reset, out[0..14]=pc);
+}
+</code></pre>
+<h3>3.2 受測電路清單</h3>
+<table>
+<thead>
+<tr>
+<th>編號</th>
+<th>電路</th>
+<th>來源</th>
+<th>特性</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>D1</td>
+<td><code>ALU</code>（16 位元）</td>
+<td>本人大一作業（nand2tetris 專案 2）</td>
+<td>純組合邏輯，38 輸入／18 輸出</td>
+</tr>
+<tr>
+<td>D2</td>
+<td><code>CPU</code>（Hack）</td>
+<td>本人大一作業（專案 5）</td>
+<td>組合＋序向，含 48 個 DFF（A/D/PC）</td>
+</tr>
+<tr>
+<td>D3</td>
+<td><code>Inc16</code></td>
+<td>同上（專案 2）</td>
+<td>純組合，16 位元進位鏈</td>
+</tr>
+<tr>
+<td>D4</td>
+<td><code>And</code></td>
+<td>同上（專案 1）</td>
+<td>最小案例：2 個 NAND</td>
+</tr>
+</tbody></table>
+<p>另外以工具內建的 nand2tetris 官方語料（同一份規格的「標準解答」）跑同一流程作為<strong>對照組</strong>，用來討論「寫法不同 → 合成結果不同」。</p>
+<h2>四、EDA 流程與原理</h2>
+<h3>4.1 各階段做什麼</h3>
+<table>
+<thead>
+<tr>
+<th>階段</th>
+<th>工具 A（Micro 系列）實作</th>
+<th>對應業界</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>① RTL→Logic</td>
+<td><code>parseHdl</code> → <code>elab</code>（建 chip 庫、解析依賴、偵測循環）→ <code>flatten</code> 展開實例階層 → <strong>位元級 NAND/DFF 網表</strong></td>
+<td>RTL elaboration / GTECH</td>
+</tr>
+<tr>
+<td>② Logic Netlist</td>
+<td>同上輸出，可逐層檢視</td>
+<td>Netlist</td>
+</tr>
+<tr>
+<td>③ 技術無關最佳化</td>
+<td>AIG 式簡化：常數傳遞（0/1）、雙重否定對消（NAND(x,x) 成對）、無用邏輯刪除</td>
+<td>Design Compiler <code>compile -no_map</code></td>
+</tr>
+<tr>
+<td>④a Techmap（FPGA）</td>
+<td>以邏輯錐<strong>貪婪覆蓋成 4 輸入 LUT</strong>，並計算每顆 LUT 的 16 位元真值表（init mask）</td>
+<td>Yosys <code>abc -lut 4</code></td>
+</tr>
+<tr>
+<td>④b Techmap（ASIC）</td>
+<td>以 NAND2/INV 為基底＋peephole 樣式辨識（MUX2、AOI21）縮小面積</td>
+<td>標準元件映射</td>
+</tr>
+<tr>
+<td>⑤ 佈局</td>
+<td><strong>模擬退火（SA）</strong>，成本函數＝HPWL（半週長線長），降溫 123 層</td>
+<td>Placement（SA / analytic）</td>
+</tr>
+<tr>
+<td>⑥ 繞線</td>
+<td>FPGA：A* 迷宮繞線（每通道 6 條軌道）；ASIC：以幾何距離估線延遲</td>
+<td>Routing</td>
+</tr>
+<tr>
+<td>⑦ STA</td>
+<td>逐級累加延遲求關鍵路徑，<code>Fmax = 1000 / T</code></td>
+<td>Static Timing Analysis</td>
+</tr>
+</tbody></table>
+<h3>4.2 工具使用的延遲／面積模型（重要，解讀數據的前提）</h3>
+<p><strong>FPGA（MicroPnR）</strong>：LUT 延遲 1.2 ns、DFF clk→q 0.6 ns、每單位曼哈頓距離線延遲 0.25 ns。</p>
+<p><strong>ASIC（AsicSyn/AsicPnR）</strong> 標準元件庫：</p>
+<table>
+<thead>
+<tr>
+<th>Cell</th>
+<th>功能</th>
+<th>面積 (µm²)</th>
+<th>延遲 (ns)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>INV</td>
+<td>反相器</td>
+<td>1.0</td>
+<td>0.08</td>
+</tr>
+<tr>
+<td>NAND2</td>
+<td>2 輸入 NAND</td>
+<td>2.0</td>
+<td>0.12</td>
+</tr>
+<tr>
+<td>AOI21</td>
+<td>!((a&amp;b)|c)</td>
+<td>3.2</td>
+<td>0.16</td>
+</tr>
+<tr>
+<td>MUX2</td>
+<td>2 選 1</td>
+<td>4.0</td>
+<td>0.20</td>
+</tr>
+<tr>
+<td>DFF</td>
+<td>正反器</td>
+<td>8.0</td>
+<td>clk-q 0.30／setup 0.15／hold 0.05</td>
+</tr>
+</tbody></table>
+<p>列高 2.2 µm、線延遲 0.01 ns/µm、每 fanout 負載 0.02 ns。<strong>這些是教學用的簡化參數</strong>，不是真實 SKY130 的數值，因此下面的「µm²」與「MHz」只能做<strong>相對比較</strong>，不能當成可下線的規格。</p>
+<h2>五、實驗步驟</h2>
+<h3>步驟 1：功能驗證（RTL 模擬）</h3>
+<p>在瀏覽器開啟 <a href="https://ccc-js.github.io/hack-computer/dist/hdl.html">https://ccc-js.github.io/hack-computer/dist/hdl.html</a>，於「內建章節晶片」選 <strong>05 CPU/電腦 → ../05/CPU.tst</strong>（測資為官方 <code>.tst/.cmp</code>），按「執行」。畫面顯示 <strong>✓ 通過</strong>，並列出每一週期的 <code>inM / instruction / outM / writeM / addressM / pc</code>：</p>
+<p><figure><img src="figures/fig1_cpu_sim.png" alt="圖 1　CPU 通過官方 CPU.tst（逐週期的 A 指令／C 指令／跳躍／reset 序列，比對 .cmp）"><figcaption>圖 1　CPU 通過官方 CPU.tst（逐週期的 A 指令／C 指令／跳躍／reset 序列，比對 .cmp）</figcaption></figure></p>
+<p>命令列等價操作（用<strong>自己的</strong> HDL 檔案，不改任何一行）：</p>
+<pre><code class="language-bash">node cli/hdl2js.js --dir projects/1 --dir projects/2 \
+  --dir projects/3 --dir projects/5 \
+  --test third_party/courses/05/CPU.tst
+# → PASS third_party/courses/05/CPU.cmp
+
+node cli/hdl2js.js --dir projects/1 --dir projects/2 \
+  --test third_party/courses/02/ALU.tst
+# → PASS third_party/courses/02/ALU.cmp
+</code></pre>
+<blockquote>
+<p>說明：本作業的專案 3（<code>Register.hdl</code>、<code>PC.hdl</code>、RAM 系列）已完成，CPU 直接使用自己的 <code>Register</code>／<code>PC</code>；專案 1、2、5 也全部是本人實作，未修改任何一行。</p>
+</blockquote>
+<h3>步驟 2：檢視電路圖（階層展開）</h3>
+<p>按「檢視電路圖」可把 HDL 的 <code>PARTS</code> 畫成結構圖，並逐層點入子元件直到最底層的 Nand／DFF：</p>
+<p><figure><img src="figures/fig2_cpu_schematic.png" alt="圖 2　CPU 的階層電路圖（可逐層點入）"><figcaption>圖 2　CPU 的階層電路圖（可逐層點入）</figcaption></figure></p>
+<h3>步驟 3：合成 → FPGA 佈局／繞線／時序</h3>
+<p>按「合成 LUT」進入 EDA 浮層，後端選 <strong>FPGA</strong>，逐階段切換 ①～⑦。</p>
+<p><figure><img src="figures/fig3_cpu_place_fpga.png" alt="圖 3　⑤ Placement：模擬退火佈局（26×26 格、80 個 I/O pad，HPWL 由 2678 降到 1110，共 123 個溫度層）"><figcaption>圖 3　⑤ Placement：模擬退火佈局（26×26 格、80 個 I/O pad，HPWL 由 2678 降到 1110，共 123 個溫度層）</figcaption></figure></p>
+<p><figure><img src="figures/fig4_cpu_route_fpga.png" alt="圖 4　⑥ Global+Detail Routing：80 條 net、778 段線，紅色為 STA 判定的關鍵路徑"><figcaption>圖 4　⑥ Global+Detail Routing：80 條 net、778 段線，紅色為 STA 判定的關鍵路徑</figcaption></figure></p>
+<h3>步驟 4：切換 ASIC 後端</h3>
+<p>同一份網表選 <strong>ASIC</strong>，即執行「標準元件映射 → row-based 佈局 → 細部繞線 → STA」：</p>
+<p><figure><img src="figures/fig5_cpu_place_asic.png" alt="圖 5　CPU 的 ASIC 視圖：1,348 顆標準元件、面積 2,891.6 µm²、139 列、線長 91,708.9 µm、Fmax 34.8 MHz、hold slack 0.11 ns"><figcaption>圖 5　CPU 的 ASIC 視圖：1,348 顆標準元件、面積 2,891.6 µm²、139 列、線長 91,708.9 µm、Fmax 34.8 MHz、hold slack 0.11 ns</figcaption></figure></p>
+<p>ALU 的 ASIC row-based 佈局（594 顆元件、1,175.4 µm²、111 列）見圖 6，STA 的關鍵路徑（21.159 ns → 47.3 MHz）見圖 7；ALU 的模擬結果見圖 8。</p>
+<p><figure><img src="figures/fig6_alu_place_fpga.png" alt="圖 6　ALU 的 ASIC row 佈局（row-based 容器式，cell 寬 ∝ 面積、列高固定 2.2 µm）"><figcaption>圖 6　ALU 的 ASIC row 佈局（row-based 容器式，cell 寬 ∝ 面積、列高固定 2.2 µm）</figcaption></figure></p>
+<p><figure><img src="figures/fig7_alu_sta_fpga.png" alt="圖 7　ALU 的 ASIC STA：critical path = 21.159 ns → Fmax 47.3 MHz（紅框為關鍵路徑上的 cell）"><figcaption>圖 7　ALU 的 ASIC STA：critical path = 21.159 ns → Fmax 47.3 MHz（紅框為關鍵路徑上的 cell）</figcaption></figure></p>
+<p><figure><img src="figures/fig8_alu_sim.png" alt="圖 8　ALU 通過官方 ALU.tst（36 組運算：0／1／−1／x／y／!x／x+y／x−y／x&y／x|y…）"><figcaption>圖 8　ALU 通過官方 ALU.tst（36 組運算：0／1／−1／x／y／!x／x+y／x−y／x&y／x|y…）</figcaption></figure></p>
+<h3>步驟 5：以第二套工具交叉驗證（veryl2chip IDE）</h3>
+<p>開啟 <a href="https://ccc-eda.github.io/veryl2chip/web/dist/index.html#ex=blinky&amp;stage=place">https://ccc-eda.github.io/veryl2chip/web/dist/index.html#ex=blinky&amp;stage=place</a>，直接在瀏覽器（WebAssembly，無伺服器）合成 Veryl 範例 Blinky；狀態列顯示「71 閘 → LUT4 33、DFF 24、Fmax 33.7 MHz」，並可切換 FPGA／ASIC·vlib／ASIC·SKY130 三種後端：</p>
+<p><figure><img src="figures/fig9_veryl2chip.png" alt="圖 9　veryl2chip IDE 的 FPGA ⑤ Placement 視圖（右側為腳位表）"><figcaption>圖 9　veryl2chip IDE 的 FPGA ⑤ Placement 視圖（右側為腳位表）</figcaption></figure></p>
+<p>此步驟驗證了：(1) 同一套「①～⑦」階段概念在另一個獨立實作的工具上也成立；(2) 商業流程中的 PDK（SKY130）與 bitstream 產出，在教學工具裡可以被簡化成同構的問題。</p>
+<h3>步驟 6：量化與等效性驗證（自動化）</h3>
+<p>由於 GUI 只能「看」，我把同一組函式庫寫成兩支腳本，用命令列批次取得數據與驗證結果（腳本見附錄、<code>data/</code> 目錄）：</p>
+<pre><code class="language-bash">node report_flow.mjs  ALU CPU Inc16 And   # 跑 ①～⑦，FPGA 退火重複 5 次取中位數
+node verify_equiv.mjs ALU CPU Inc16 And   # 每個設計 20000 組隨機向量，比對 LUT/ASIC 網表 vs 展平 NAND 網表
+</code></pre>
+<h2>六、實驗結果</h2>
+<h3>6.1 邏輯合成統計</h3>
+<table>
+<thead>
+<tr>
+<th>電路</th>
+<th>輸入／輸出位元</th>
+<th>展平後 NAND</th>
+<th>最佳化後 NAND</th>
+<th>降幅</th>
+<th>LUT4</th>
+<th>DFF</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>D1 ALU（我的）</td>
+<td>38／18</td>
+<td>1,279</td>
+<td>1,183</td>
+<td>−7.5%</td>
+<td>209</td>
+<td>0</td>
+</tr>
+<tr>
+<td>D2 CPU（我的）</td>
+<td>33／47</td>
+<td>2,589</td>
+<td>2,208</td>
+<td>−14.7%</td>
+<td>372</td>
+<td>48</td>
+</tr>
+<tr>
+<td>D3 Inc16（我的）</td>
+<td>16／16</td>
+<td>385</td>
+<td>276</td>
+<td>−28.3%</td>
+<td>44</td>
+<td>0</td>
+</tr>
+<tr>
+<td>D4 And（我的）</td>
+<td>2／1</td>
+<td>2</td>
+<td>2</td>
+<td>0%</td>
+<td>1</td>
+<td>0</td>
+</tr>
+<tr>
+<td>對照 ALU（官方）</td>
+<td>38／18</td>
+<td>1,278</td>
+<td>1,174</td>
+<td>−8.1%</td>
+<td>177</td>
+<td>0</td>
+</tr>
+<tr>
+<td>對照 CPU（官方）</td>
+<td>33／47</td>
+<td>2,632</td>
+<td>2,176</td>
+<td>−17.3%</td>
+<td>344</td>
+<td>48</td>
+</tr>
+<tr>
+<td>對照 Inc16（官方）</td>
+<td>16／16</td>
+<td>384</td>
+<td>224</td>
+<td><strong>−41.7%</strong></td>
+<td>60</td>
+<td>0</td>
+</tr>
+</tbody></table>
+<p>觀察：</p>
+<ol>
+<li><strong>最佳化對進位鏈最有效</strong>：Inc16 的 384 → 224（−41.7%），因為漣波進位鏈中「NAND(x,x) 反相器對」與常數 0/1 大量被吸收。</li>
+<li><strong>已手動精簡過的電路空間小</strong>：ALU 只降 8%，因為 Mux16/加法器結構本來就接近最小形式。</li>
+<li><strong>平均一顆 LUT4 覆蓋 3.7～6.6 個最佳化閘</strong>（我的 ALU 1,183/209＝5.66、我的 CPU 2,208/372＝5.94、對照 CPU 2,176/344＝6.33、對照 Inc16 224/60＝3.73）。</li>
+</ol>
+<h3>6.2 FPGA 佈局、繞線與時序（退火 5 次，取中位數）</h3>
+<table>
+<thead>
+<tr>
+<th>電路</th>
+<th>格子</th>
+<th>密度</th>
+<th>總線長</th>
+<th>關鍵路徑</th>
+<th>Fmax</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>ALU（我的）</td>
+<td>19×19</td>
+<td>0.58</td>
+<td>2,577</td>
+<td>30.45 ns</td>
+<td><strong>32.8 MHz</strong></td>
+</tr>
+<tr>
+<td>CPU（我的）</td>
+<td>27×27</td>
+<td>0.58</td>
+<td>5,062</td>
+<td>38.30 ns</td>
+<td><strong>26.1 MHz</strong></td>
+</tr>
+<tr>
+<td>Inc16（我的）</td>
+<td>9×9</td>
+<td>0.54</td>
+<td>29</td>
+<td>21.75 ns</td>
+<td><strong>46.0 MHz</strong></td>
+</tr>
+<tr>
+<td>對照 ALU</td>
+<td>18×18</td>
+<td>0.55</td>
+<td>1,905（1,893–1,921）</td>
+<td>33.35 ns</td>
+<td>30.0 MHz</td>
+</tr>
+<tr>
+<td>對照 CPU</td>
+<td>26×26</td>
+<td>0.58</td>
+<td>4,070</td>
+<td>45.55 ns</td>
+<td>22.0 MHz</td>
+</tr>
+<tr>
+<td>對照 Inc16</td>
+<td>10×10</td>
+<td>0.60</td>
+<td>69</td>
+<td>43.50 ns</td>
+<td>23.0 MHz</td>
+</tr>
+<tr>
+<td>And（我的）</td>
+<td>4×4</td>
+<td>0.06</td>
+<td>4</td>
+<td>1.45 ns</td>
+<td>689.7 MHz</td>
+</tr>
+</tbody></table>
+<p>5 次退火的線長差異僅 ±0.7%（以對照 ALU 為例：1,893–1,921），且<strong>關鍵路徑完全不變</strong>——因為在此模型中關鍵路徑由「LUT 級數 × 1.2 ns」主導，線延遲（0.25 ns/單位）只佔一小部分。</p>
+<h3>6.3 ASIC 標準元件映射與實體設計</h3>
+<table>
+<thead>
+<tr>
+<th>電路</th>
+<th>標準元件</th>
+<th>組成（INV／NAND2／AOI21／MUX2／DFF）</th>
+<th>面積 (µm²)</th>
+<th>列數</th>
+<th>線長 (µm)</th>
+<th>關鍵路徑</th>
+<th>Fmax</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>ALU（我的）</td>
+<td>499</td>
+<td>234／109／61／95／0</td>
+<td>1,027.2</td>
+<td>78</td>
+<td>16,034</td>
+<td>14.83 ns</td>
+<td><strong>67.4 MHz</strong></td>
+</tr>
+<tr>
+<td>CPU（我的）</td>
+<td>1,205</td>
+<td>535／273／191／158／48</td>
+<td>2,708.2</td>
+<td>106</td>
+<td>57,765</td>
+<td>22.19 ns</td>
+<td><strong>45.1 MHz</strong></td>
+</tr>
+<tr>
+<td>Inc16（我的）</td>
+<td>153</td>
+<td>47／61／30／15／0</td>
+<td>325.0</td>
+<td>63</td>
+<td>2,600</td>
+<td>11.90 ns</td>
+<td><strong>84.0 MHz</strong></td>
+</tr>
+<tr>
+<td>對照 ALU</td>
+<td>594</td>
+<td>295／127／77／95／0</td>
+<td>1,175.4</td>
+<td>111</td>
+<td>22,737</td>
+<td>21.16 ns</td>
+<td>47.3 MHz</td>
+</tr>
+<tr>
+<td>對照 CPU</td>
+<td>1,348</td>
+<td>640／309／193／158／48</td>
+<td>2,891.6</td>
+<td>139</td>
+<td>91,708</td>
+<td>28.75 ns</td>
+<td>34.8 MHz</td>
+</tr>
+<tr>
+<td>對照 Inc16</td>
+<td>174</td>
+<td>78／65／16／15／0</td>
+<td>319.2</td>
+<td>66</td>
+<td>1,705</td>
+<td>12.35 ns</td>
+<td>81.0 MHz</td>
+</tr>
+<tr>
+<td>And（我的）</td>
+<td>2</td>
+<td>1／1／0／0／0</td>
+<td>3.0</td>
+<td>3</td>
+<td>2.2</td>
+<td>0.30 ns</td>
+<td>3,311 MHz（模型上限）</td>
+</tr>
+</tbody></table>
+<p>與 FPGA 相比（同一份設計、同一份網表，只換後端）：</p>
+<ul>
+<li><strong>Fmax：我的 ALU 67.4 vs 32.8 MHz（+105%）、我的 CPU 45.1 vs 26.1 MHz（+73%）；對照組 ALU 47.3 vs 30.0 MHz（+58%）。</strong> 原因純粹是模型參數：標準元件單級延遲 0.08–0.20 ns，而 LUT 一級就是 1.2 ns。兩者提升幅度不同，正是因為 FPGA 每級「固定」1.2 ns，而 ASIC 的級數與線長隨映射結果變化。</li>
+<li><strong>DFF 數目一致（CPU 皆為 48 顆）</strong>，但 ASIC 版還額外多出數百個 INV／NAND2／AOI21——這是把 LUT 的真值表拆回真實邏輯閘的代價，也是 FPGA「用面積換彈性」的具體寫照。</li>
+<li><strong>面積 vs LUT</strong>（以對照組為例）：CPU 每顆 LUT 平均 8.4 µm²、ALU 6.6 µm²；DFF 佔 CPU 面積 384 µm²（13.3%），與其 48/1,348 的數量占比相符（每顆 DFF 8 µm² 最貴）。</li>
+</ul>
+<h3>6.4 合成後網表的等效性驗證</h3>
+<p>方法：把 DFF 輸出當作自由輸入（組合等效／次態函數等效），對每個設計產生 <strong>20,000 組隨機向量</strong>，分別用「展平 NAND 網表」、「LUT4 網表」、「ASIC 標準元件網表」求值，逐一比對 47／18／16／1 個輸出位元。</p>
+<table>
+<thead>
+<tr>
+<th>電路</th>
+<th>向量數</th>
+<th>DFF</th>
+<th>比對輸出位元</th>
+<th>LUT 網表錯誤</th>
+<th>ASIC 網表錯誤</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>ALU</td>
+<td>20,000</td>
+<td>0</td>
+<td>18</td>
+<td><strong>0</strong></td>
+<td><strong>0</strong></td>
+</tr>
+<tr>
+<td>CPU</td>
+<td>20,000</td>
+<td>48</td>
+<td>47</td>
+<td><strong>0</strong></td>
+<td><strong>0</strong></td>
+</tr>
+<tr>
+<td>Inc16</td>
+<td>20,000</td>
+<td>0</td>
+<td>16</td>
+<td><strong>0</strong></td>
+<td><strong>0</strong></td>
+</tr>
+<tr>
+<td>And</td>
+<td>20,000</td>
+<td>0</td>
+<td>1</td>
+<td><strong>0</strong></td>
+<td><strong>0</strong></td>
+</tr>
+</tbody></table>
+<p>（原始結果：<code>data/equivalence_my_designs.json</code>）</p>
+<h3>6.5 第二套工具（veryl2chip）的結果</h3>
+<table>
+<thead>
+<tr>
+<th>設計</th>
+<th>語言</th>
+<th>原始閘數</th>
+<th>LUT4</th>
+<th>DFF</th>
+<th>Fmax</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Blinky（LED 閃爍）</td>
+<td>Veryl</td>
+<td>71</td>
+<td>33</td>
+<td>24</td>
+<td>33.7 MHz</td>
+</tr>
+</tbody></table>
+<p>兩套工具在「階段劃分、資料結構（netlist/cell）、成本模型（HPWL、SA）」上高度一致，可互為對照。</p>
+<h2>七、討論</h2>
+<h3>7.1 為什麼「同樣功能、不同寫法」會合成出不同電路？</h3>
+<p>我的 ALU 與官方解答 ALU <strong>功能完全相同、展平後只差 1 個 NAND 閘（1,279 vs 1,278）</strong>，但：</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>我的</th>
+<th>官方</th>
+<th>差異</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>最佳化後閘數</td>
+<td>1,183</td>
+<td>1,174</td>
+<td>+0.8%</td>
+</tr>
+<tr>
+<td>LUT4</td>
+<td><strong>209</strong></td>
+<td><strong>177</strong></td>
+<td><strong>+18.1%</strong></td>
+</tr>
+<tr>
+<td>Fmax（FPGA）</td>
+<td>32.8 MHz</td>
+<td>30.0 MHz</td>
+<td>+9%</td>
+</tr>
+<tr>
+<td>ASIC 面積</td>
+<td>1,027 µm²</td>
+<td>1,175 µm²</td>
+<td>−13%</td>
+</tr>
+</tbody></table>
+<p>差別只在寫法：官方多了一層別名 <code>out=o2, out=out</code>，我直接 <code>out=out</code>；另外 <code>And16</code>／<code>Add16</code> 的宣告順序不同。由於 <strong>LUT 覆蓋是貪婪啟發式（greedy）</strong>，展平後網路的產生順序會改變「先覆蓋哪個邏輯錐」，結果 LUT 數就差了 32 顆。這說明：</p>
+<ul>
+<li>合成不是唯一解，<strong>啟發式演算法的好壞直接影響 PPA（Power/Performance/Area）</strong>；</li>
+<li>想控制結果，得靠「寫法約束」（如 <code>keep</code>、<code>dont_touch</code>）或更強的映射演算法（如 exact mapping / SAT-based）；</li>
+<li>有趣的是我的版本 LUT 較多但 ASIC 面積較小——因為貪婪覆蓋出的 LUT 真值表較「剛好」，拆回標準元件時反而省。</li>
+</ul>
+<h3>7.2 關鍵路徑從哪裡來？</h3>
+<ul>
+<li><strong>ALU（我的 30.45 ns／對照 33.35 ns）</strong>：<code>x2 → Add16（16 級漣波進位）→ Mux16 → Not16 → Mux16 → Or8Way → Not</code>，光 16 位元進位鏈就佔了大部分；30.45 ns ÷ 1.2 ns ≈ 25 級 LUT，與電路深度吻合。</li>
+<li><strong>CPU（我的 38.30 ns／對照 45.55 ns）</strong>：多了「A 暫存器 → ALU → A 暫存器」的回授路徑與跳躍判斷（zr/ng → jgt/jeq/jlt → loadPC）。</li>
+<li><strong>Inc16（我的 21.75 ns／對照 43.50 ns）</strong>：純進位鏈，同樣功能卻因映射出 44 顆 vs 60 顆 LUT 而相差近一倍 Fmax（46.0 vs 23.0 MHz）——再次說明「面積小 ≠ 快，級數（深度）才是關鍵」，而級數取決於映射結果。</li>
+</ul>
+<h3>7.3 FPGA 與 ASIC 的取捨</h3>
+<table>
+<thead>
+<tr>
+<th>面向</th>
+<th>FPGA（LUT4）</th>
+<th>ASIC（標準元件）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>實現方式</td>
+<td>真值表查表（每顆 LUT 可實現任意 4 輸入函數）</td>
+<td>用 INV/NAND2/AOI21/MUX2 兜出邏輯</td>
+</tr>
+<tr>
+<td>元件數</td>
+<td>少（177～372 顆）</td>
+<td>多（594～1,348 顆）</td>
+</tr>
+<tr>
+<td>速度</td>
+<td>慢（每級 1.2 ns 固定成本）</td>
+<td>快（每級 0.08–0.20 ns）</td>
+</tr>
+<tr>
+<td>變更成本</td>
+<td>重燒 bitstream 即可</td>
+<td>要重做光罩（NRE 極高）</td>
+</tr>
+<tr>
+<td>本實驗 Fmax（我的 ALU／CPU）</td>
+<td>32.8／26.1 MHz</td>
+<td>67.4／45.1 MHz</td>
+</tr>
+</tbody></table>
+<h3>7.4 工具的限制（也是解讀數據時必須聲明的）</h3>
+<ol>
+<li><strong>黑盒子記憶體不能合成</strong>：對含 <code>Screen</code>／<code>RAM16K</code> 的專案（如 Pong）按「合成」會得到「微型合成器目前暫不支援內建黑盒子記憶體」的錯誤——真實合成器也需要 memory compiler／SRAM macro。</li>
+<li><strong>時序模型是靜態估計</strong>：沒有真實電容、沒有 clock tree、沒有 crosstalk、沒有 OCV，ASIC 的 47 MHz 不能當真。</li>
+<li><strong>標準元件庫是示意值</strong>（INV 1 µm²、0.08 ns），僅供相對比較；真實 SKY130 的 <code>sky130_fd_sc_hd</code> 面積與延遲差一個數量級以上。</li>
+<li><strong>佈局只看 HPWL</strong>：沒有 congestion、沒有 timing-driven placement，所以線長最佳化對 Fmax 幾乎沒幫助（見 6.2）。</li>
+<li><strong>等效性驗證是隨機的</strong>：20,000 組向量對 38 輸入的 ALU 只覆蓋極小部分空間（2³⁸ 種），嚴格做法需 SAT/BDD 的形式等價檢查（另一套工具 veryl2chip 的 <code>test.sh --full</code> 就是呼叫 yosys 做形式等價）。</li>
+</ol>
+<h3>7.5 與課堂理論的對應</h3>
+<table>
+<thead>
+<tr>
+<th>課堂／ECE 5745 主題</th>
+<th>本實驗對應的觀察</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Topic 12 合成演算法</td>
+<td>常數傳遞、雙重否定對消 → Inc16 −41.7%；貪婪 LUT 覆蓋 → 同功能差 18% LUT</td>
+</tr>
+<tr>
+<td>Topic 13 實體設計演算法</td>
+<td>SA 佈局（HPWL 2678 → 1110）、A* 迷宮繞線、STA 關鍵路徑回溯</td>
+</tr>
+<tr>
+<td>邏輯設計／迪摩根定律</td>
+<td>最佳化階段把 <code>NAND(x,x)</code> 合併成 INV，就是迪摩根定律的代數化簡</td>
+</tr>
+<tr>
+<td>計算機結構（資料流）</td>
+<td>CPU 資料流 → HDL → 閘級網表 → 實體佈局，一條線貫穿</td>
+</tr>
+</tbody></table>
+<h2>八、結論</h2>
+<ol>
+<li>我成功用兩套<strong>免費、開源、免安裝</strong>的 EDA 工具，把自製的 Hack ALU 與 CPU 從 HDL 走完 <strong>合成 → 技術映射 → 佈局 → 繞線 → 時序分析</strong> 的完整流程，並取得可量化的 PPA 數據（ALU：209 LUT／30.0 MHz／1,027 µm²；CPU：372 LUT＋48 DFF／26.1 MHz／2,708 µm²）。</li>
+<li>合成後網表（LUT4 與標準元件兩種）經 20,000 組隨機向量比對，功能與 RTL <strong>完全等價（0 錯誤）</strong>。</li>
+<li>實驗證實三個課堂觀念：<strong>(a)</strong> 邏輯最佳化對規則結構（進位鏈）效益最大；<strong>(b)</strong> 技術映射與佈局都是啟發式，結果不唯一，寫法會影響 PPA；<strong>(c)</strong> FPGA 以面積換取彈性與較低速度，ASIC 以更多電晶體換速度與面積效率。</li>
+<li>最大的收穫是「看到每一個階段的中間產物」：原本抽象的「合成」，其實就是 <code>parse → flatten → 化簡 → 覆蓋 → 擺放 → 拉線 → 算延遲</code> 這七步；而 30.45 ns（我的 ALU）／38.30 ns（我的 CPU）的關鍵路徑，最後可以追到 16 位元進位鏈的每一級 LUT。</li>
+</ol>
+<h2>九、參考資料</h2>
+<ol>
+<li>hack-computer：<a href="https://github.com/ccc-js/hack-computer">https://github.com/ccc-js/hack-computer</a>（線上 HDL 模擬器：<a href="https://ccc-js.github.io/hack-computer/dist/hdl.html">https://ccc-js.github.io/hack-computer/dist/hdl.html</a>）</li>
+<li>veryl2chip：<a href="https://github.com/ccc-eda/veryl2chip">https://github.com/ccc-eda/veryl2chip</a>（線上 IDE：<a href="https://ccc-eda.github.io/veryl2chip/web/dist/index.html">https://ccc-eda.github.io/veryl2chip/web/dist/index.html</a>）</li>
+<li>Nisan, N. &amp; Schocken, S., <em>The Elements of Computing Systems</em>（nand2tetris），專案 1、2、5。</li>
+<li>Cornell ECE 5745 <em>Complex Digital ASIC Design</em> 講義：Topic 12 Synthesis Algorithms、Topic 13 Physical Design Automation Algorithms（<a href="https://www.csl.cornell.edu/courses/ece5745/handouts.html">https://www.csl.cornell.edu/courses/ece5745/handouts.html</a>）</li>
+</ol>
+<hr>
+<h2>附錄 A：可重現指令</h2>
+<pre><code class="language-bash"># 0. 取得工具（純 JS，不需編譯）
+git clone --depth 1 https://github.com/ccc-js/hack-computer.git
+cd hack-computer
+
+# 1. RTL 模擬（用官方 .tst/.cmp 測自己的 HDL）
+node cli/hdl2js.js --dir ../nand2tetris/projects/1 --dir ../nand2tetris/projects/2 \
+  --test third_party/courses/02/ALU.tst
+node cli/hdl2js.js --dir ../nand2tetris/projects/1 --dir ../nand2tetris/projects/2 \
+  --dir ../nand2tetris/projects/3 --dir ../nand2tetris/projects/5 \
+  --test third_party/courses/05/CPU.tst
+
+# 2. 合成 / 佈局 / 繞線 / STA（FPGA＋ASIC，退火 5 次取中位數）
+node ../報告/data/report_flow.mjs ALU CPU Inc16 And
+
+# 3. 等效性驗證（各 20000 組隨機向量）
+node ../報告/data/verify_equiv.mjs ALU CPU Inc16 And
+</code></pre>
+<p>瀏覽器操作：<code>dist/hdl.html</code> →「內建章節晶片」選章節與測資 →「執行」／「檢視電路圖」／「合成 LUT」。</p>
+<h2>附錄 B：檔案清單</h2>
+<table>
+<thead>
+<tr>
+<th>路徑</th>
+<th>內容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>figures/fig1_cpu_sim.png</code></td>
+<td>CPU 通過官方測資（✓ 通過）</td>
+</tr>
+<tr>
+<td><code>figures/fig2_cpu_schematic.png</code></td>
+<td>CPU 階層電路圖</td>
+</tr>
+<tr>
+<td><code>figures/fig3_cpu_place_fpga.png</code></td>
+<td>FPGA ⑤ 模擬退火佈局</td>
+</tr>
+<tr>
+<td><code>figures/fig4_cpu_route_fpga.png</code></td>
+<td>FPGA ⑥ 繞線＋關鍵路徑</td>
+</tr>
+<tr>
+<td><code>figures/fig5_cpu_place_asic.png</code></td>
+<td>ASIC 標準元件映射／row 佈局</td>
+</tr>
+<tr>
+<td><code>figures/fig6_alu_place_fpga.png</code></td>
+<td>ALU 的 ASIC row 佈局</td>
+</tr>
+<tr>
+<td><code>figures/fig7_alu_sta_fpga.png</code></td>
+<td>ALU 的 ASIC STA（關鍵路徑 21.159 ns）</td>
+</tr>
+<tr>
+<td><code>figures/fig8_alu_sim.png</code></td>
+<td>ALU 通過官方 ALU.tst（✓ 通過）</td>
+</tr>
+<tr>
+<td><code>figures/fig9_veryl2chip.png</code></td>
+<td>veryl2chip IDE（第二套工具）</td>
+</tr>
+<tr>
+<td><code>data/metrics_my_designs.json</code></td>
+<td>我的設計：合成／PnR／STA 原始數據</td>
+</tr>
+<tr>
+<td><code>data/metrics_builtin_corpus.json</code></td>
+<td>官方對照語料的數據</td>
+</tr>
+<tr>
+<td><code>data/equivalence_my_designs.json</code></td>
+<td>等效性驗證結果</td>
+</tr>
+<tr>
+<td><code>data/report_flow.mjs</code>, <code>data/verify_equiv.mjs</code></td>
+<td>使用的腳本（可直接重跑）</td>
+</tr>
+<tr>
+<td><code>data/README.md</code></td>
+<td>腳本使用說明與環境、目錄結構</td>
+</tr>
+</tbody></table>
+
+</body>
+</html>

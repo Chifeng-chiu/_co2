@@ -1,0 +1,34 @@
+﻿{
+  "ALU": {
+    "vectors": 20000,
+    "dffs": 0,
+    "outputs": 18,
+    "lutMismatch": 0,
+    "asicMismatch": 0,
+    "firstBadVector": null
+  },
+  "CPU": {
+    "vectors": 20000,
+    "dffs": 48,
+    "outputs": 47,
+    "lutMismatch": 0,
+    "asicMismatch": 0,
+    "firstBadVector": null
+  },
+  "Inc16": {
+    "vectors": 20000,
+    "dffs": 0,
+    "outputs": 16,
+    "lutMismatch": 0,
+    "asicMismatch": 0,
+    "firstBadVector": null
+  },
+  "And": {
+    "vectors": 20000,
+    "dffs": 0,
+    "outputs": 1,
+    "lutMismatch": 0,
+    "asicMismatch": 0,
+    "firstBadVector": null
+  }
+}
