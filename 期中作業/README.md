@@ -8,35 +8,18 @@
 這個資料夾用來集中放期中作業的檔案，方便繳交與日後回顧。
 期中範圍涵蓋 Nand2Tetris 前半段的硬體專案：
 
-| 章節 | 主題 | 對應專案 |
-|------|------|----------|
-| 00 | 課程工具與環境 | `00/` |
-| 01 | Boolean Logic（And / Or / Not / Mux / DMux …） | `01/` |
-| 02 | Boolean Arithmetic（HalfAdder / FullAdder / ALU …） | `02/` |
-| 03 | Sequential Logic（Bit / Register / RAM / PC） | `03/` |
-| 04 | Machine Language（Mult / Fill 組語） | `04/` |
-| 05 | Computer Architecture（CPU / Memory / Computer） | `05/` |
+每週檢驗表格
 
-## 資料夾結構
+| 第幾週 | 習題內容 | 有上課且準時繳交 | 補交且附上請假證明 | 作業連結 |
+| :---: | :---: | :---: | :---: | :---: |
+| 3 | 第 1, 2 章 | 是 | | [01](https://github.com/Chifeng-chiu/_co2/tree/main/01), [02](https://github.com/Chifeng-chiu/_co2/tree/main/02) |
+| 4 | 第 3 章除 PC | 否 | 是 | [03](https://github.com/Chifeng-chiu/_co2/tree/main/03) |
+| 5 | 第 4 章 | 是 | | [04](https://github.com/Chifeng-chiu/_co2/tree/main/04) |
+| 6 | HackCPU 電路圖 | 是 | | [作業(圖片)](https://github.com/Chifeng-chiu/_co2/tree/main/%E4%BD%9C%E6%A5%AD(%E5%9C%96%E7%89%87)) |
+| 7 | 第 5 章 | 是 | | [05](https://github.com/Chifeng-chiu/_co2/tree/main/05) |
+| 8 | EDA 軟體報告 | 是 | | [報告](https://github.com/Chifeng-chiu/_co2/tree/main/%E5%A0%B1%E5%91%8A) |
 
-```text
-期中作業/
-└── README.md   # 本檔案
-```
 
-之後要放的內容可以直接建子資料夾，例如：
 
-```text
-期中作業/
-├── README.md
-├── 01/          # Boolean Logic 的 .hdl 與測試結果
-├── 02/          # ALU 相關實作
-├── 03/          # 循序邏輯電路
-├── 04/          # Hack 組合語言
-└── 05/          # CPU 與整台 Computer
-```
 
-## 備註
 
-- 各章節的完整實作仍保留在 repo 根目錄的 `00/` ~ `05/`。
-- 測試方式：用 Nand2Tetris 的 `HardwareSimulator` / `CPUEmulator` 開啟對應的 `.tst` 檔，比對 `.cmp` 期望值。
