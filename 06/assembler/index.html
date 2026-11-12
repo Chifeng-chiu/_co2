@@ -1,0 +1,2697 @@
+<!DOCTYPE html>
+<html lang="zh-Hant" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Nand2Tetris Project 6 Hack Assembler & Disassembler Workbench">
+<title>Hack Assembler Workbench · Nand2Tetris Project 6</title>
+<script>
+(function () {
+  try {
+    var saved = localStorage.getItem('n2t-workbench-theme');
+    if (saved === 'light' || saved === 'dark') {
+      document.documentElement.setAttribute('data-theme', saved);
+    }
+  } catch (error) { /* localStorage may be unavailable on file:// */ }
+})();
+</script>
+<style>
+:root {
+  --bg: #05090f;
+  --bg-2: #080e18;
+  --panel: #0c1523;
+  --panel-2: #101c2f;
+  --line: #1b2b45;
+  --line-soft: #142136;
+  --text: #dce8f8;
+  --muted: #8ba2c1;
+  --dim: #5a7294;
+  --accent: #2ee6c5;
+  --accent-2: #7aa2ff;
+  --purple: #c084fc;
+  --pink: #fb7185;
+  --amber: #fbbf24;
+  --green: #34d399;
+  --mono: "JetBrains Mono", "Cascadia Code", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  --sans: "Inter", "Segoe UI", system-ui, -apple-system, "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+  --radius: 16px;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; color-scheme: dark; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 14px;
+  background:
+    radial-gradient(1100px 560px at 10% -12%, rgba(46, 230, 197, 0.11), transparent 62%),
+    radial-gradient(900px 520px at 92% -4%, rgba(122, 162, 255, 0.12), transparent 58%),
+    var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+.bg-grid {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(122, 162, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(122, 162, 255, 0.035) 1px, transparent 1px);
+  background-size: 46px 46px;
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 25%, transparent 78%);
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 25%, transparent 78%);
+}
+
+::selection { background: rgba(46, 230, 197, 0.28); color: #f2fffc; }
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.02); }
+::-webkit-scrollbar-thumb {
+  background: #22344f;
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover { background: #2f4769; background-clip: padding-box; }
+* { scrollbar-width: thin; scrollbar-color: #22344f transparent; }
+
+/* ---------- Header ---------- */
+
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: rgba(5, 9, 15, 0.84);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.header-inner {
+  max-width: 1640px;
+  margin: 0 auto;
+  padding: 13px 22px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-right: auto;
+  min-width: 0;
+}
+
+.logo {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  border-radius: 13px;
+  display: grid;
+  place-items: center;
+  color: var(--accent);
+  background: linear-gradient(135deg, rgba(46, 230, 197, 0.17), rgba(122, 162, 255, 0.17));
+  border: 1px solid rgba(46, 230, 197, 0.36);
+  box-shadow: inset 0 0 22px rgba(46, 230, 197, 0.12), 0 10px 26px rgba(0, 0, 0, 0.42);
+}
+
+.logo svg { width: 23px; height: 23px; }
+
+.brand h1 {
+  margin: 0;
+  font-size: 16.5px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+
+.brand h1 .hl {
+  background: linear-gradient(92deg, #8ff5e2 0%, #7aa2ff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.brand p {
+  margin: 3px 0 0;
+  font-size: 11.5px;
+  color: var(--muted);
+  letter-spacing: 0.35px;
+  white-space: nowrap;
+}
+
+.mode-switch {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: #080f1a;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.mode-btn {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  padding: 8px 14px;
+  border-radius: 9px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  transition: color 0.18s, background 0.18s, box-shadow 0.18s;
+  white-space: nowrap;
+}
+
+.mode-btn .arrow { color: var(--dim); font-size: 13px; transition: color 0.18s; }
+.mode-btn:hover { color: var(--text); background: rgba(255, 255, 255, 0.045); }
+
+.mode-btn.active {
+  color: #04120f;
+  background: linear-gradient(135deg, #2ee6c5, #83f2dc);
+  box-shadow: 0 5px 18px rgba(46, 230, 197, 0.3);
+}
+.mode-btn.active .arrow { color: #04120f; }
+
+.mode-btn[data-mode="hack2asm"].active {
+  background: linear-gradient(135deg, #7aa2ff, #b3c7ff);
+  box-shadow: 0 5px 18px rgba(122, 162, 255, 0.3);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.select-wrap { position: relative; display: inline-flex; }
+
+.select-wrap::after {
+  content: "";
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid var(--muted);
+  border-bottom: 1.5px solid var(--muted);
+  transform: translateY(-70%) rotate(45deg);
+  pointer-events: none;
+}
+
+select.preset {
+  appearance: none;
+  -webkit-appearance: none;
+  background: #0b1422;
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 9px 32px 9px 12px;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.18s, background 0.18s;
+}
+select.preset:hover { border-color: rgba(46, 230, 197, 0.42); background: #0e1929; }
+select.preset:focus-visible { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(46, 230, 197, 0.14); }
+select.preset option { background: #0b1422; color: var(--text); }
+
+.btn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid var(--line);
+  background: #0b1524;
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 0.16s, border-color 0.16s, background 0.16s, box-shadow 0.16s;
+}
+
+.btn:hover {
+  border-color: rgba(46, 230, 197, 0.45);
+  background: #101d30;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.28);
+}
+.btn:active { transform: translateY(0); }
+.btn:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(46, 230, 197, 0.16); }
+
+.btn.primary {
+  background: linear-gradient(135deg, rgba(46, 230, 197, 0.16), rgba(122, 162, 255, 0.16));
+  border-color: rgba(46, 230, 197, 0.42);
+  color: #d8fff8;
+}
+.btn.primary:hover { background: linear-gradient(135deg, rgba(46, 230, 197, 0.24), rgba(122, 162, 255, 0.22)); }
+
+.btn.tiny { padding: 5px 9px; font-size: 11px; border-radius: 8px; }
+
+.btn svg { width: 14px; height: 14px; flex: 0 0 auto; }
+
+.theme-btn {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  padding: 0;
+}
+.theme-btn svg { width: 16px; height: 16px; }
+.theme-btn .icon-moon { display: none; }
+html[data-theme="light"] .theme-btn .icon-sun { display: none; }
+html[data-theme="light"] .theme-btn .icon-moon { display: block; }
+
+.icon-btn {
+  appearance: none;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--dim);
+  cursor: pointer;
+  transition: color 0.16s, background 0.16s, border-color 0.16s;
+}
+.icon-btn:hover { color: var(--accent); background: rgba(46, 230, 197, 0.08); border-color: rgba(46, 230, 197, 0.2); }
+.icon-btn.danger:hover { color: var(--pink); background: rgba(251, 113, 133, 0.09); border-color: rgba(251, 113, 133, 0.25); }
+.icon-btn svg { width: 14px; height: 14px; }
+
+/* ---------- Status bar ---------- */
+
+.statusbar {
+  position: relative;
+  z-index: 1;
+  max-width: 1640px;
+  margin: 15px auto 0;
+  padding: 0 22px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  color: var(--muted);
+  background: rgba(12, 21, 35, 0.82);
+  border: 1px solid var(--line-soft);
+  padding: 6px 11px;
+  border-radius: 999px;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+.chip b { color: var(--text); font-variant-numeric: tabular-nums; font-weight: 700; }
+.chip .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 9px var(--accent);
+  transition: background 0.2s, box-shadow 0.2s;
+}
+.chip.err { transition: border-color 0.2s, color 0.2s; }
+.chip.err.has-error { border-color: rgba(251, 113, 133, 0.45); color: #ffb3c0; background: rgba(251, 113, 133, 0.07); }
+.chip.err.has-error b { color: #ff8fa0; }
+.chip.hint { color: var(--dim); border-style: dashed; }
+
+/* ---------- Layout ---------- */
+
+main {
+  position: relative;
+  z-index: 1;
+  max-width: 1640px;
+  margin: 0 auto;
+  padding: 14px 22px 46px;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+}
+
+/* ---------- Error bar ---------- */
+
+.error-bar {
+  margin-bottom: 14px;
+  border: 1px solid rgba(251, 113, 133, 0.38);
+  background: linear-gradient(180deg, rgba(251, 113, 133, 0.1), rgba(251, 113, 133, 0.035));
+  border-radius: 13px;
+  padding: 11px 14px;
+  animation: slideDown 0.22s ease-out;
+}
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.error-bar .head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #ffb3c0;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+}
+.error-bar .head svg { width: 15px; height: 15px; }
+.error-bar ul { margin: 8px 0 0; padding: 0; list-style: none; display: grid; gap: 3px; }
+.error-bar li {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: #fecdd3;
+  cursor: pointer;
+  padding: 4px 7px;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+.error-bar li:hover { background: rgba(251, 113, 133, 0.11); }
+.error-bar li .ln { color: #ff8fa0; font-weight: 700; margin-right: 5px; }
+.error-bar li .src { color: #b98a96; }
+.error-bar .more { margin-top: 5px; font-size: 11px; color: #c98d9a; }
+
+/* ---------- Editor panes ---------- */
+
+.pane {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: linear-gradient(180deg, rgba(16, 28, 47, 0.86), rgba(9, 16, 28, 0.96));
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: 0 20px 44px rgba(0, 0, 0, 0.3);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.pane.is-source {
+  border-color: rgba(46, 230, 197, 0.34);
+  box-shadow: 0 20px 44px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(46, 230, 197, 0.06);
+}
+#hackPane.is-source {
+  border-color: rgba(122, 162, 255, 0.4);
+  box-shadow: 0 20px 44px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(122, 162, 255, 0.08);
+}
+
+.pane-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 10px 9px 14px;
+  border-bottom: 1px solid var(--line-soft);
+  background: rgba(255, 255, 255, 0.017);
+  min-height: 46px;
+}
+.pane-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+}
+.pane-title .ext { font-family: var(--mono); color: var(--accent); font-size: 11.5px; }
+.pane-title .ext.hack { color: var(--accent-2); }
+.pane-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 9px rgba(46, 230, 197, 0.75);
+}
+.pane-dot.hack { background: var(--accent-2); box-shadow: 0 0 9px rgba(122, 162, 255, 0.75); }
+
+.pane-badge {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.9px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--dim);
+  background: rgba(255, 255, 255, 0.02);
+  white-space: nowrap;
+}
+.pane.is-source .pane-badge { color: #05201b; background: var(--accent); border-color: transparent; }
+#hackPane.is-source .pane-badge { color: #071021; background: var(--accent-2); border-color: transparent; }
+
+.spacer { flex: 1 1 auto; }
+
+.editor-shell {
+  display: flex;
+  height: clamp(300px, 41vh, 470px);
+  min-height: 220px;
+  background: #070d16;
+  position: relative;
+  overflow: hidden;
+}
+
+.gutter {
+  flex: 0 0 52px;
+  padding: 13px 9px 13px 0;
+  text-align: right;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 22px;
+  color: #354c6c;
+  background: rgba(255, 255, 255, 0.014);
+  border-right: 1px solid var(--line-soft);
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.gutter-line {
+  height: 22px;
+  padding-right: 2px;
+  border-radius: 4px;
+  transition: color 0.12s, background 0.12s;
+}
+.gutter-line.active { color: #7dd3fc; background: rgba(122, 162, 255, 0.09); }
+.gutter-line.err { color: #ff8fa0; background: rgba(251, 113, 133, 0.12); font-weight: 700; }
+
+.code-editor {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  margin: 0;
+  padding: 13px 16px;
+  border: 0;
+  outline: 0;
+  resize: none;
+  background: transparent;
+  color: #d5e3f5;
+  caret-color: var(--accent);
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 22px;
+  tab-size: 4;
+  -moz-tab-size: 4;
+  white-space: pre;
+  overflow: auto;
+}
+.code-editor::placeholder { color: #40556f; opacity: 1; }
+.code-editor:focus { background: rgba(46, 230, 197, 0.012); }
+#hackEditor { color: #cfe0ff; caret-color: var(--accent-2); }
+#hackEditor::selection { background: rgba(122, 162, 255, 0.28); }
+
+.pane-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 14px;
+  border-top: 1px solid var(--line-soft);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--dim);
+  letter-spacing: 0.3px;
+  background: rgba(255, 255, 255, 0.012);
+}
+
+/* ---------- Inspector ---------- */
+
+.inspector {
+  margin-top: 16px;
+  background: linear-gradient(180deg, rgba(16, 28, 47, 0.86), rgba(9, 16, 28, 0.96));
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: 0 20px 44px rgba(0, 0, 0, 0.26);
+}
+
+.tabs {
+  display: flex;
+  gap: 3px;
+  padding: 9px 12px 0;
+  border-bottom: 1px solid var(--line-soft);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.tabs::-webkit-scrollbar { display: none; }
+
+.tab {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  padding: 9px 13px 11px;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+  transition: color 0.16s, border-color 0.16s, background 0.16s;
+  border-radius: 8px 8px 0 0;
+}
+.tab:hover { color: var(--text); background: rgba(255, 255, 255, 0.025); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); background: rgba(46, 230, 197, 0.035); }
+.tab svg { width: 14px; height: 14px; opacity: 0.85; }
+.tab .count {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(46, 230, 197, 0.12);
+  color: var(--accent);
+  font-weight: 700;
+}
+.tab:not(.active) .count { background: rgba(255, 255, 255, 0.05); color: var(--dim); }
+
+.tab-panel { display: none; padding: 16px; }
+.tab-panel.active { display: block; animation: fadeIn 0.2s ease-out; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.panel-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 13px;
+}
+.panel-head h2 {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  color: #e8f2ff;
+}
+.panel-head p {
+  margin: 4px 0 0;
+  font-size: 11.5px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.legend {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  flex-wrap: wrap;
+  font-size: 10.5px;
+  color: var(--muted);
+}
+.legend span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.lg { width: 9px; height: 9px; border-radius: 3px; display: inline-block; }
+.lg-op { background: #8fb0ff; }
+.lg-a { background: var(--amber); }
+.lg-comp { background: var(--accent); }
+.lg-dest { background: var(--purple); }
+.lg-jump { background: var(--pink); }
+
+/* ---------- Tables ---------- */
+
+.table-wrap {
+  overflow: auto;
+  max-height: 460px;
+  border: 1px solid var(--line-soft);
+  border-radius: 12px;
+  background: rgba(5, 10, 17, 0.4);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.data-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  text-align: left;
+  padding: 9px 12px;
+  font-size: 9.5px;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+  color: var(--dim);
+  font-weight: 800;
+  background: #0a1320;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+.data-table tbody td {
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(27, 43, 69, 0.5);
+  vertical-align: middle;
+}
+.data-table tbody tr:last-child td { border-bottom: 0; }
+.data-table tbody tr:hover { background: rgba(122, 162, 255, 0.045); }
+
+td.num { font-family: var(--mono); color: var(--dim); font-size: 10.5px; font-variant-numeric: tabular-nums; }
+td.bits { font-family: var(--mono); font-size: 12.5px; letter-spacing: 0.6px; white-space: nowrap; }
+td.src { font-family: var(--mono); color: #cfe0f5; white-space: nowrap; }
+td.decode { font-family: var(--mono); white-space: nowrap; font-size: 12px; }
+
+.seg {
+  display: inline-block;
+  padding: 2px 1px;
+  border-radius: 4px;
+  cursor: help;
+  transition: filter 0.14s, box-shadow 0.14s;
+}
+.seg:hover { filter: brightness(1.45); box-shadow: 0 0 0 1px currentColor; }
+.seg-op { color: #8fb0ff; background: rgba(122, 162, 255, 0.12); }
+.seg-a { color: var(--amber); background: rgba(251, 191, 36, 0.12); }
+.seg-comp { color: var(--accent); background: rgba(46, 230, 197, 0.12); }
+.seg-dest { color: var(--purple); background: rgba(192, 132, 252, 0.13); }
+.seg-jump { color: var(--pink); background: rgba(251, 113, 133, 0.13); }
+.seg-val { color: #7ff0d8; background: rgba(46, 230, 197, 0.07); }
+
+.dec-a { color: #9fe9ff; }
+.dec-comp { color: var(--accent); }
+.dec-dest { color: var(--purple); }
+.dec-jump { color: var(--pink); }
+.sym-tag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 9.5px;
+  color: #9fb4d6;
+  background: rgba(122, 162, 255, 0.1);
+  border: 1px solid rgba(122, 162, 255, 0.16);
+}
+
+/* ---------- Symbol inspector ---------- */
+
+.symbol-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 12px;
+}
+
+.sym-card {
+  background: rgba(5, 10, 17, 0.42);
+  border: 1px solid var(--line-soft);
+  border-radius: 12px;
+  overflow: hidden;
+  min-width: 0;
+}
+.sym-card h3 {
+  margin: 0;
+  padding: 10px 12px;
+  font-size: 10.5px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line-soft);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-weight: 800;
+}
+.sym-card h3 .count {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgba(46, 230, 197, 0.1);
+  color: var(--accent);
+  letter-spacing: 0;
+}
+.sym-list { max-height: 270px; overflow: auto; padding: 4px 0; }
+.sym-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 5px 12px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  transition: background 0.13s;
+}
+.sym-row:hover { background: rgba(255, 255, 255, 0.032); }
+.sym-name { color: #cfe0f5; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sym-val { color: var(--accent); font-variant-numeric: tabular-nums; flex: 0 0 auto; }
+.sym-card.vars .sym-val { color: var(--purple); }
+.sym-note { padding: 8px 12px; font-size: 10.5px; color: var(--dim); border-top: 1px solid var(--line-soft); line-height: 1.5; }
+.sym-empty { padding: 18px 12px; text-align: center; font-size: 11px; color: var(--dim); }
+
+/* ---------- Diff checker ---------- */
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+.check input {
+  appearance: none;
+  width: 15px;
+  height: 15px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #0a1320;
+  cursor: pointer;
+  position: relative;
+  margin: 0;
+}
+.check input:checked { background: var(--accent); border-color: var(--accent); }
+.check input:checked::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 4px;
+  height: 8px;
+  border-right: 2px solid #04120f;
+  border-bottom: 2px solid #04120f;
+  transform: rotate(42deg);
+}
+
+.diff-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+  gap: 14px;
+}
+.diff-input-wrap, .diff-result-wrap { min-width: 0; display: flex; flex-direction: column; }
+
+.mini-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 7px;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  color: var(--dim);
+  min-height: 28px;
+}
+
+.diff-input {
+  width: 100%;
+  min-height: 230px;
+  flex: 1 1 auto;
+  resize: vertical;
+  border: 1px solid var(--line-soft);
+  border-radius: 11px;
+  background: #070d16;
+  color: #cfe0ff;
+  padding: 12px 14px;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 21px;
+  outline: none;
+  caret-color: var(--accent-2);
+}
+.diff-input:focus { border-color: rgba(122, 162, 255, 0.45); box-shadow: 0 0 0 3px rgba(122, 162, 255, 0.1); }
+.diff-input::placeholder { color: #40556f; }
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  border: 1px solid var(--line);
+  color: var(--dim);
+  background: rgba(255, 255, 255, 0.03);
+  white-space: nowrap;
+}
+.badge.ok {
+  color: #04251c;
+  background: linear-gradient(135deg, #34d399, #7ef0c4);
+  border-color: transparent;
+  box-shadow: 0 4px 16px rgba(52, 211, 153, 0.25);
+}
+.badge.bad {
+  color: #38060e;
+  background: linear-gradient(135deg, #fb7185, #fda4af);
+  border-color: transparent;
+  box-shadow: 0 4px 16px rgba(251, 113, 133, 0.22);
+}
+
+.diff-result {
+  flex: 1 1 auto;
+  min-height: 230px;
+  max-height: 360px;
+  overflow: auto;
+  border: 1px solid var(--line-soft);
+  border-radius: 11px;
+  background: rgba(5, 10, 17, 0.42);
+}
+
+.diff-summary {
+  padding: 8px 12px;
+  font-size: 10.5px;
+  color: var(--muted);
+  background: rgba(122, 162, 255, 0.045);
+  border-bottom: 1px solid var(--line-soft);
+  letter-spacing: 0.2px;
+}
+.diff-summary b { color: var(--pink); }
+
+.diff-table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+.diff-table th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #0a1320;
+  color: var(--dim);
+  font-size: 9.5px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+.diff-table td { padding: 6px 10px; border-bottom: 1px solid rgba(27, 43, 69, 0.45); vertical-align: top; }
+.diff-table td.mono { font-family: var(--mono); font-size: 11px; white-space: nowrap; letter-spacing: 0.4px; }
+.diff-table tr.diff { background: rgba(251, 113, 133, 0.08); }
+.diff-table tr.diff td { color: #ffc4cd; }
+.diff-table tr.missing { background: rgba(251, 191, 36, 0.07); }
+.diff-table tr.missing td { color: #ffe3a3; }
+.diff-table tr.extra { background: rgba(192, 132, 252, 0.07); }
+.diff-table tr.extra td { color: #e3c8ff; }
+.diff-table tr.okrow td { color: #9fb4d6; }
+
+.pill {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+.pill.ok { background: rgba(52, 211, 153, 0.14); color: #6ee7b7; }
+.pill.bad { background: rgba(251, 113, 133, 0.16); color: #fda4af; }
+.pill.warn { background: rgba(251, 191, 36, 0.14); color: #fcd34d; }
+.pill.extra { background: rgba(192, 132, 252, 0.14); color: #d8b4fe; }
+
+.diff-result > .empty { min-height: 228px; justify-content: center; }
+
+.diff-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 228px;
+  padding: 24px;
+  text-align: center;
+  color: #8ef0cd;
+  font-size: 12px;
+}
+.diff-success .big {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(52, 211, 153, 0.12);
+  border: 1px solid rgba(52, 211, 153, 0.4);
+  color: var(--green);
+  box-shadow: 0 0 26px rgba(52, 211, 153, 0.16);
+}
+.diff-success .big svg { width: 24px; height: 24px; }
+.diff-success strong { font-size: 14px; color: #b9ffe9; letter-spacing: 0.3px; }
+.diff-success span { color: var(--muted); font-size: 11.5px; }
+
+/* ---------- Empty state ---------- */
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 34px 16px;
+  text-align: center;
+  color: var(--dim);
+  font-size: 11.5px;
+  line-height: 1.6;
+}
+.empty svg { width: 28px; height: 28px; opacity: 0.45; margin-bottom: 2px; }
+.empty strong { color: var(--muted); font-weight: 700; font-size: 12px; }
+
+/* ---------- Toast / drop overlay ---------- */
+
+.toast {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 120;
+  max-width: min(360px, calc(100vw - 40px));
+  background: #0c1727;
+  border: 1px solid rgba(46, 230, 197, 0.38);
+  color: var(--text);
+  padding: 11px 16px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.45;
+  box-shadow: 0 20px 44px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
+  transition: opacity 0.22s, transform 0.22s;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast.error { border-color: rgba(251, 113, 133, 0.55); }
+
+.drop-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  display: none;
+  place-items: center;
+  background: rgba(3, 7, 12, 0.82);
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+}
+.drop-overlay.show { display: grid; }
+.drop-box {
+  border: 2px dashed rgba(46, 230, 197, 0.55);
+  border-radius: 22px;
+  padding: 54px 72px;
+  text-align: center;
+  background: rgba(12, 23, 39, 0.72);
+  box-shadow: 0 0 70px rgba(46, 230, 197, 0.1);
+  pointer-events: none;
+}
+.drop-box svg { width: 38px; height: 38px; color: var(--accent); margin-bottom: 10px; }
+.drop-box h2 { margin: 0 0 6px; font-size: 16px; color: #d8fff8; }
+.drop-box p { margin: 0; font-size: 12px; color: var(--muted); }
+
+/* ---------- Light theme ---------- */
+
+html[data-theme="light"] {
+  color-scheme: light;
+  --bg: #eef3fa;
+  --bg-2: #e6eef8;
+  --panel: #ffffff;
+  --panel-2: #f5f9ff;
+  --line: #cddbec;
+  --line-soft: #e2ebf6;
+  --text: #16213a;
+  --muted: #5c6f88;
+  --dim: #8496ac;
+  --accent: #0d9488;
+  --accent-2: #3563d9;
+  --purple: #7e22ce;
+  --pink: #be123c;
+  --amber: #b45309;
+  --green: #047857;
+}
+
+html[data-theme="light"] body {
+  background:
+    radial-gradient(1100px 560px at 10% -12%, rgba(13, 148, 136, 0.1), transparent 62%),
+    radial-gradient(900px 520px at 92% -4%, rgba(79, 124, 247, 0.13), transparent 58%),
+    var(--bg);
+}
+
+html[data-theme="light"] .bg-grid {
+  background-image:
+    linear-gradient(rgba(53, 99, 217, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(53, 99, 217, 0.055) 1px, transparent 1px);
+}
+
+html[data-theme="light"] ::selection { background: rgba(13, 148, 136, 0.22); color: #062a26; }
+
+html[data-theme="light"] ::-webkit-scrollbar-track { background: rgba(22, 33, 58, 0.035); }
+html[data-theme="light"] ::-webkit-scrollbar-thumb { background: #b7c7da; }
+html[data-theme="light"] ::-webkit-scrollbar-thumb:hover { background: #9fb3ca; }
+html[data-theme="light"] * { scrollbar-color: #b7c7da transparent; }
+
+html[data-theme="light"] .app-header { background: rgba(238, 243, 250, 0.86); }
+
+html[data-theme="light"] .logo {
+  background: linear-gradient(135deg, rgba(13, 148, 136, 0.14), rgba(79, 124, 247, 0.14));
+  border-color: rgba(13, 148, 136, 0.32);
+  box-shadow: inset 0 0 22px rgba(13, 148, 136, 0.08), 0 8px 20px rgba(22, 33, 58, 0.12);
+}
+
+html[data-theme="light"] .brand h1 .hl {
+  background: linear-gradient(92deg, #0f766e 0%, #3559c7 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+html[data-theme="light"] .mode-switch {
+  background: #e4edf9;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+html[data-theme="light"] .mode-btn:hover { background: rgba(22, 33, 58, 0.06); }
+html[data-theme="light"] .mode-btn.active { box-shadow: 0 5px 16px rgba(13, 148, 136, 0.24); }
+html[data-theme="light"] .mode-btn[data-mode="hack2asm"].active { box-shadow: 0 5px 16px rgba(53, 99, 217, 0.24); }
+
+html[data-theme="light"] select.preset {
+  background: #ffffff;
+  border-color: var(--line);
+}
+html[data-theme="light"] select.preset:hover { background: #f6faff; border-color: rgba(13, 148, 136, 0.42); }
+html[data-theme="light"] select.preset option { background: #ffffff; color: var(--text); }
+
+html[data-theme="light"] .btn { background: #ffffff; }
+html[data-theme="light"] .btn:hover {
+  background: #f3f8ff;
+  border-color: rgba(13, 148, 136, 0.42);
+  box-shadow: 0 8px 20px rgba(22, 33, 58, 0.1);
+}
+html[data-theme="light"] .btn.primary {
+  background: linear-gradient(135deg, rgba(13, 148, 136, 0.13), rgba(79, 124, 247, 0.13));
+  border-color: rgba(13, 148, 136, 0.4);
+  color: #0b3b36;
+}
+html[data-theme="light"] .btn.primary:hover {
+  background: linear-gradient(135deg, rgba(13, 148, 136, 0.2), rgba(79, 124, 247, 0.2));
+}
+
+html[data-theme="light"] .chip { background: rgba(255, 255, 255, 0.82); }
+html[data-theme="light"] .chip.err.has-error {
+  border-color: rgba(190, 18, 60, 0.38);
+  color: #b3123b;
+  background: rgba(190, 18, 60, 0.07);
+}
+html[data-theme="light"] .chip.err.has-error b { color: #9f1239; }
+
+html[data-theme="light"] .error-bar {
+  border-color: rgba(190, 18, 60, 0.3);
+  background: linear-gradient(180deg, rgba(190, 18, 60, 0.08), rgba(190, 18, 60, 0.02));
+}
+html[data-theme="light"] .error-bar .head { color: #b3123b; }
+html[data-theme="light"] .error-bar li { color: #8c1c3a; }
+html[data-theme="light"] .error-bar li:hover { background: rgba(190, 18, 60, 0.08); }
+html[data-theme="light"] .error-bar li .ln { color: #9f1239; }
+html[data-theme="light"] .error-bar li .src { color: #8a6470; }
+html[data-theme="light"] .error-bar .more { color: #8a6470; }
+
+html[data-theme="light"] .pane {
+  background: linear-gradient(180deg, #ffffff, #f7fbff);
+  box-shadow: 0 18px 40px rgba(22, 33, 58, 0.1);
+}
+html[data-theme="light"] .pane.is-source {
+  box-shadow: 0 18px 40px rgba(22, 33, 58, 0.1), 0 0 0 1px rgba(13, 148, 136, 0.08);
+}
+html[data-theme="light"] #hackPane.is-source {
+  box-shadow: 0 18px 40px rgba(22, 33, 58, 0.1), 0 0 0 1px rgba(53, 99, 217, 0.1);
+}
+html[data-theme="light"] .pane-head { background: rgba(22, 33, 58, 0.02); }
+html[data-theme="light"] .pane-badge { background: rgba(22, 33, 58, 0.035); }
+html[data-theme="light"] .pane.is-source .pane-badge { color: #ffffff; }
+html[data-theme="light"] #hackPane.is-source .pane-badge { color: #ffffff; }
+
+html[data-theme="light"] .editor-shell { background: #fbfdff; }
+html[data-theme="light"] .gutter {
+  color: #93a4b8;
+  background: rgba(22, 33, 58, 0.025);
+}
+html[data-theme="light"] .gutter-line.active { color: #1d4ed8; background: rgba(53, 99, 217, 0.1); }
+html[data-theme="light"] .gutter-line.err { color: #be123c; background: rgba(190, 18, 60, 0.1); }
+html[data-theme="light"] .code-editor { color: #1e2c46; }
+html[data-theme="light"] .code-editor::placeholder { color: #9aabc0; }
+html[data-theme="light"] .code-editor:focus { background: rgba(13, 148, 136, 0.02); }
+html[data-theme="light"] #hackEditor { color: #1c2f5a; }
+html[data-theme="light"] #hackEditor::selection { background: rgba(53, 99, 217, 0.2); }
+html[data-theme="light"] .pane-foot { background: rgba(22, 33, 58, 0.02); }
+
+html[data-theme="light"] .inspector {
+  background: linear-gradient(180deg, #ffffff, #f7fbff);
+  box-shadow: 0 18px 40px rgba(22, 33, 58, 0.09);
+}
+html[data-theme="light"] .tab:hover { background: rgba(22, 33, 58, 0.04); }
+html[data-theme="light"] .tab.active { background: rgba(13, 148, 136, 0.06); }
+html[data-theme="light"] .tab:not(.active) .count { background: rgba(22, 33, 58, 0.06); }
+html[data-theme="light"] .panel-head h2 { color: #16213a; }
+
+html[data-theme="light"] .table-wrap { background: rgba(255, 255, 255, 0.6); }
+html[data-theme="light"] .data-table thead th { background: #eff5fc; }
+html[data-theme="light"] .data-table tbody td { border-bottom-color: rgba(205, 219, 236, 0.7); }
+html[data-theme="light"] .data-table tbody tr:hover { background: rgba(53, 99, 217, 0.06); }
+html[data-theme="light"] td.src { color: #22345a; }
+html[data-theme="light"] .lg-op { background: #2f5fd0; }
+html[data-theme="light"] .seg-op { color: #2f5fd0; }
+html[data-theme="light"] .seg-val { color: #0f766e; }
+html[data-theme="light"] .dec-a { color: #0369a1; }
+html[data-theme="light"] .seg:hover { filter: brightness(0.94); }
+html[data-theme="light"] .sym-tag {
+  color: #3d5a80;
+  background: rgba(53, 99, 217, 0.08);
+  border-color: rgba(53, 99, 217, 0.16);
+}
+
+html[data-theme="light"] .sym-card { background: rgba(255, 255, 255, 0.72); }
+html[data-theme="light"] .sym-row:hover { background: rgba(22, 33, 58, 0.04); }
+html[data-theme="light"] .sym-name { color: #22345a; }
+
+html[data-theme="light"] .check input { background: #ffffff; }
+html[data-theme="light"] .check input:checked::after {
+  border-right-color: #ffffff;
+  border-bottom-color: #ffffff;
+}
+
+html[data-theme="light"] .diff-input {
+  background: #fbfdff;
+  color: #1c2f5a;
+}
+html[data-theme="light"] .diff-input::placeholder { color: #9aabc0; }
+html[data-theme="light"] .badge:not(.ok):not(.bad) { background: rgba(22, 33, 58, 0.04); }
+html[data-theme="light"] .diff-result { background: rgba(255, 255, 255, 0.6); }
+html[data-theme="light"] .diff-summary { background: rgba(53, 99, 217, 0.06); }
+html[data-theme="light"] .diff-table th { background: #eff5fc; }
+html[data-theme="light"] .diff-table td { border-bottom-color: rgba(205, 219, 236, 0.65); }
+html[data-theme="light"] .diff-table tr.diff td { color: #a4123a; }
+html[data-theme="light"] .diff-table tr.missing td { color: #92400e; }
+html[data-theme="light"] .diff-table tr.extra td { color: #6b21a8; }
+html[data-theme="light"] .diff-table tr.okrow td { color: #5c6f88; }
+html[data-theme="light"] .pill.ok { color: #047857; background: rgba(4, 120, 87, 0.12); }
+html[data-theme="light"] .pill.bad { color: #be123c; background: rgba(190, 18, 60, 0.12); }
+html[data-theme="light"] .pill.warn { color: #92400e; background: rgba(180, 83, 9, 0.12); }
+html[data-theme="light"] .pill.extra { color: #6b21a8; background: rgba(126, 34, 206, 0.12); }
+html[data-theme="light"] .diff-success { color: #047857; }
+html[data-theme="light"] .diff-success .big {
+  background: rgba(4, 120, 87, 0.12);
+  border-color: rgba(4, 120, 87, 0.35);
+  box-shadow: 0 0 26px rgba(4, 120, 87, 0.12);
+}
+html[data-theme="light"] .diff-success strong { color: #065f46; }
+
+html[data-theme="light"] .toast {
+  background: #ffffff;
+  border-color: rgba(13, 148, 136, 0.35);
+  box-shadow: 0 20px 44px rgba(22, 33, 58, 0.18);
+}
+html[data-theme="light"] .toast.error { border-color: rgba(190, 18, 60, 0.45); }
+
+html[data-theme="light"] .drop-overlay { background: rgba(226, 235, 246, 0.82); }
+html[data-theme="light"] .drop-box {
+  background: rgba(255, 255, 255, 0.88);
+  border-color: rgba(13, 148, 136, 0.5);
+  box-shadow: 0 0 70px rgba(13, 148, 136, 0.12);
+}
+html[data-theme="light"] .drop-box h2 { color: #0f3f3a; }
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 1180px) {
+  .header-inner { gap: 12px; }
+  .brand p { display: none; }
+  .chip.hint { display: none; }
+}
+
+@media (max-width: 1000px) {
+  .workspace { grid-template-columns: 1fr; }
+  .editor-shell { height: clamp(260px, 36vh, 380px); }
+  .diff-layout { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 760px) {
+  .header-inner { padding: 11px 14px; }
+  .statusbar, main { padding-left: 14px; padding-right: 14px; }
+  main { padding-bottom: 30px; }
+  .brand h1 { font-size: 14.5px; }
+  .logo { width: 38px; height: 38px; flex-basis: 38px; }
+  .mode-switch { order: 3; width: 100%; }
+  .mode-btn { flex: 1; justify-content: center; }
+  .header-actions { order: 4; width: 100%; }
+  .header-actions .btn { flex: 1 1 auto; }
+  .header-actions .theme-btn { flex: 0 0 36px; width: 36px; }
+  .select-wrap { flex: 1 1 100%; }
+  select.preset { width: 100%; }
+  .tab-panel { padding: 12px; }
+  .panel-head { align-items: flex-start; }
+  .legend { gap: 9px; }
+  .drop-box { padding: 38px 28px; }
+  .gutter { flex-basis: 42px; font-size: 11.5px; }
+  .code-editor { font-size: 12px; padding-left: 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+  html { scroll-behavior: auto; }
+}
+</style>
+</head>
+<body>
+<div class="bg-grid" aria-hidden="true"></div>
+
+<header class="app-header">
+  <div class="header-inner">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="7" y="7" width="10" height="10" rx="2"></rect>
+          <path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"></path>
+        </svg>
+      </div>
+      <div>
+        <h1><span class="hl">Hack</span> Assembler Workbench</h1>
+        <p>Nand2Tetris Project 6 · ASM ⇄ HACK 雙向組譯工作台</p>
+      </div>
+    </div>
+
+    <div class="mode-switch" role="group" aria-label="轉換模式">
+      <button class="mode-btn active" data-mode="asm2hack" id="modeAsm" aria-pressed="true">
+        ASM <span class="arrow">→</span> HACK
+      </button>
+      <button class="mode-btn" data-mode="hack2asm" id="modeHack" aria-pressed="false">
+        HACK <span class="arrow">→</span> ASM
+      </button>
+    </div>
+
+    <div class="header-actions">
+      <div class="select-wrap">
+        <select id="presetSelect" class="preset" aria-label="載入官方測試範例">
+          <option value="">載入官方範例…</option>
+          <option value="Add.asm">Add.asm · 基礎加法</option>
+          <option value="Max.asm">Max.asm · 取最大值</option>
+          <option value="Rect.asm">Rect.asm · 畫矩形</option>
+        </select>
+      </div>
+      <button class="btn" id="uploadBtn" title="上傳 .asm 或 .hack 檔案">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M17 8l-5-5-5 5"></path><path d="M12 3v12"></path></svg>
+        上傳
+      </button>
+      <input type="file" id="fileInput" accept=".asm,.hack,.txt" hidden>
+      <button class="btn" id="downloadHackBtn" title="下載目前的 16-bit 機器碼">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M7 10l5 5 5-5"></path><path d="M12 15V3"></path></svg>
+        下載 .hack
+      </button>
+      <button class="btn" id="downloadAsmBtn" title="下載目前的組合語言">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M7 10l5 5 5-5"></path><path d="M12 15V3"></path></svg>
+        下載 .asm
+      </button>
+      <button class="btn primary" id="copyBtn" title="複製目前模式的輸出結果">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+        複製結果
+      </button>
+      <button class="btn theme-btn" id="themeToggle" title="切換為淺色主題" aria-label="切換為淺色主題" aria-pressed="false">
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path></svg>
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="statusbar">
+  <div class="chip"><span class="dot" id="modeDot"></span>模式 <b id="chipMode">ASM → HACK</b></div>
+  <div class="chip">指令 <b id="chipCount">0</b></div>
+  <div class="chip">標籤 <b id="chipLabels">0</b></div>
+  <div class="chip">變數 <b id="chipVars">0</b></div>
+  <div class="chip err" id="chipErr">錯誤 <b id="chipErrors">0</b></div>
+  <div class="chip hint">可直接編輯任一側 · 或拖放 .asm / .hack 檔案</div>
+</div>
+
+<main>
+  <div id="errorBar" class="error-bar" hidden></div>
+
+  <section class="workspace">
+    <article class="pane is-source" id="asmPane">
+      <div class="pane-head">
+        <div class="pane-title"><span class="pane-dot"></span>組合語言 <span class="ext">.asm</span></div>
+        <span class="pane-badge" id="asmBadge">輸入</span>
+        <div class="spacer"></div>
+        <button class="icon-btn" id="copyAsmBtn" title="複製 ASM" aria-label="複製 ASM">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+        </button>
+        <button class="icon-btn danger" id="clearAsmBtn" title="清空 ASM" aria-label="清空 ASM">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+        </button>
+      </div>
+      <div class="editor-shell">
+        <div class="gutter" id="asmGutter" aria-hidden="true"></div>
+        <textarea id="asmEditor" class="code-editor" spellcheck="false" wrap="off" aria-label="Hack 組合語言編輯區" placeholder="在此輸入 Hack 組合語言…&#10;&#10;@2&#10;D=A&#10;@3&#10;D=D+A&#10;@0&#10;M=D"></textarea>
+      </div>
+      <div class="pane-foot"><span id="asmMeta">1 行</span><span>Hack Assembly</span></div>
+    </article>
+
+    <article class="pane is-target" id="hackPane">
+      <div class="pane-head">
+        <div class="pane-title"><span class="pane-dot hack"></span>機器碼 <span class="ext hack">.hack</span></div>
+        <span class="pane-badge" id="hackBadge">輸出</span>
+        <div class="spacer"></div>
+        <button class="icon-btn" id="copyHackBtn" title="複製 HACK" aria-label="複製 HACK">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+        </button>
+        <button class="icon-btn danger" id="clearHackBtn" title="清空 HACK" aria-label="清空 HACK">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+        </button>
+      </div>
+      <div class="editor-shell">
+        <div class="gutter" id="hackGutter" aria-hidden="true"></div>
+        <textarea id="hackEditor" class="code-editor" spellcheck="false" wrap="off" aria-label="Hack 16-bit 機器碼編輯區" placeholder="16-bit 機器碼會顯示在這裡，也可直接貼上 .hack 內容進行反組譯…"></textarea>
+      </div>
+      <div class="pane-foot"><span id="hackMeta">0 個 16-bit 指令</span><span>Binary / ROM</span></div>
+    </article>
+  </section>
+
+  <section class="inspector">
+    <div class="tabs" role="tablist" aria-label="教學檢視面板">
+      <button class="tab active" data-tab="breakdown" role="tab" aria-selected="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M3 9h18M3 15h18M9 3v18"></path></svg>
+        指令拆解 <span class="count" id="tabBreakdownCount">0</span>
+      </button>
+      <button class="tab" data-tab="symbols" role="tab" aria-selected="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h16M4 15h16M10 3L8 21M16 3l-2 18"></path></svg>
+        符號表 <span class="count" id="tabSymbolCount">0</span>
+      </button>
+      <button class="tab" data-tab="diff" role="tab" aria-selected="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"></circle><circle cx="18" cy="18" r="3"></circle><path d="M6 9v6a3 3 0 0 0 3 3h6M18 15V9a3 3 0 0 0-3-3H9"></path></svg>
+        比對驗證
+      </button>
+    </div>
+
+    <div class="tab-panel active" id="panel-breakdown" role="tabpanel">
+      <div class="panel-head">
+        <div>
+          <h2>指令色塊拆解對照表</h2>
+          <p>逐行拆解 16-bit 機器碼；滑鼠移到色塊上可查看欄位意義。</p>
+        </div>
+        <div class="legend" aria-label="色塊圖例">
+          <span><i class="lg lg-op"></i>Opcode</span>
+          <span><i class="lg lg-a"></i>a bit</span>
+          <span><i class="lg lg-comp"></i>comp</span>
+          <span><i class="lg lg-dest"></i>dest</span>
+          <span><i class="lg lg-jump"></i>jump</span>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table breakdown-table">
+          <thead>
+            <tr><th>行</th><th>ROM</th><th>原始指令</th><th>16-bit 機器碼</th><th>解碼</th></tr>
+          </thead>
+          <tbody id="breakdownBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="panel-symbols" role="tabpanel">
+      <div class="panel-head">
+        <div>
+          <h2>符號表檢視器</h2>
+          <p>預定義符號、ROM 標籤與自訂變數（從 RAM[16] 開始）即時一覽。</p>
+        </div>
+      </div>
+      <div id="symbolContent"></div>
+    </div>
+
+    <div class="tab-panel" id="panel-diff" role="tabpanel">
+      <div class="panel-head">
+        <div>
+          <h2>比對驗證器</h2>
+          <p>貼上官方 Assembler 產生的標準 .hack 解答，自動逐行比對目前輸出。</p>
+        </div>
+        <label class="check"><input type="checkbox" id="diffShowAll"> 顯示全部行</label>
+      </div>
+      <div class="diff-layout">
+        <div class="diff-input-wrap">
+          <div class="mini-head">
+            <span>標準解答（.hack）</span>
+            <button class="btn tiny" id="diffClearBtn">清空</button>
+          </div>
+          <textarea id="diffInput" class="diff-input" spellcheck="false" placeholder="貼上官方 .hack 內容…&#10;&#10;0000000000000010&#10;1110110000010000&#10;0000000000000011&#10;1110000010010000&#10;0000000000000000&#10;1110001100001000"></textarea>
+        </div>
+        <div class="diff-result-wrap">
+          <div class="mini-head">
+            <span>比對結果</span>
+            <span class="badge" id="diffBadge">等待輸入</span>
+          </div>
+          <div id="diffResult" class="diff-result"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<div class="drop-overlay" id="dropOverlay" aria-hidden="true">
+  <div class="drop-box">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+      <path d="M17 8l-5-5-5 5"></path>
+      <path d="M12 3v12"></path>
+    </svg>
+    <h2>放開以載入檔案</h2>
+    <p>支援 .asm 與 .hack · 自動判斷方向並轉換</p>
+  </div>
+</div>
+<script>
+'use strict';
+
+/* =====================================================================
+   Nand2Tetris Project 6 — Hack instruction tables
+   ===================================================================== */
+
+const PREDEFINED = (() => {
+  const table = { SP: 0, LCL: 1, ARG: 2, THIS: 3, THAT: 4 };
+  for (let i = 0; i < 16; i += 1) table['R' + i] = i;
+  table.SCREEN = 16384;
+  table.KBD = 24576;
+  return table;
+})();
+
+const PREDEFINED_ORDER = [
+  'SP', 'LCL', 'ARG', 'THIS', 'THAT',
+  ...Array.from({ length: 16 }, (_, i) => 'R' + i),
+  'SCREEN', 'KBD',
+];
+
+/* mnemonic -> a + cccccc (7 bits) */
+const COMP_TABLE = {
+  '0': '0101010',
+  '1': '0111111',
+  '-1': '0111010',
+  'D': '0001100',
+  'A': '0110000',
+  '!D': '0001101',
+  '!A': '0110001',
+  '-D': '0001111',
+  '-A': '0110011',
+  'D+1': '0011111',
+  'A+1': '0110111',
+  'D-1': '0001110',
+  'A-1': '0110010',
+  'D+A': '0000010',
+  'D-A': '0010011',
+  'A-D': '0000111',
+  'D&A': '0000000',
+  'D|A': '0010101',
+  'M': '1110000',
+  '!M': '1110001',
+  '-M': '1110011',
+  'M+1': '1110111',
+  'M-1': '1110010',
+  'D+M': '1000010',
+  'D-M': '1010011',
+  'M-D': '1000111',
+  'D&M': '1000000',
+  'D|M': '1010101',
+};
+
+const COMP_ALIASES = {
+  'A+D': 'D+A',
+  'M+D': 'D+M',
+  'A&D': 'D&A',
+  'M&D': 'D&M',
+  'A|D': 'D|A',
+  'M|D': 'D|M',
+  '1+D': 'D+1',
+  '1+A': 'A+1',
+  '1+M': 'M+1',
+};
+
+const DEST_REVERSE = {
+  '000': 'null',
+  '001': 'M',
+  '010': 'D',
+  '011': 'MD',
+  '100': 'A',
+  '101': 'AM',
+  '110': 'AD',
+  '111': 'AMD',
+};
+
+const JUMP_TABLE = {
+  'null': '000',
+  'JGT': '001',
+  'JEQ': '010',
+  'JGE': '011',
+  'JLT': '100',
+  'JNE': '101',
+  'JLE': '110',
+  'JMP': '111',
+};
+
+const JUMP_REVERSE = {
+  '000': 'null',
+  '001': 'JGT',
+  '010': 'JEQ',
+  '011': 'JGE',
+  '100': 'JLT',
+  '101': 'JNE',
+  '110': 'JLE',
+  '111': 'JMP',
+};
+
+const COMP_REVERSE = (() => {
+  const reverse = {};
+  Object.keys(COMP_TABLE).forEach((name) => {
+    reverse[COMP_TABLE[name]] = name;
+  });
+  return reverse;
+})();
+
+const SYMBOL_RE = /^[A-Za-z_.$:][A-Za-z0-9_.$:]*$/;
+const DECIMAL_RE = /^[0-9]+$/;
+const BINARY_RE = /^[01]{16}$/;
+
+/* =====================================================================
+   Helpers
+   ===================================================================== */
+
+function stripComment(line) {
+  const index = line.indexOf('//');
+  return index >= 0 ? line.slice(0, index) : line;
+}
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, (char) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  }[char]));
+}
+
+function pad15(value) {
+  return value.toString(2).padStart(15, '0');
+}
+
+function compCodeFor(raw) {
+  const key = raw.replace(/\s+/g, '');
+  const candidates = [key, key.toUpperCase()];
+  for (const candidate of candidates) {
+    if (COMP_TABLE[candidate]) return COMP_TABLE[candidate];
+    const alias = COMP_ALIASES[candidate];
+    if (alias && COMP_TABLE[alias]) return COMP_TABLE[alias];
+  }
+  throw new Error('未知的 comp 助憶碼「' + raw + '」');
+}
+
+function destCodeFor(dest) {
+  if (!dest) return '000';
+  const key = dest.trim();
+  if (!key || key.toLowerCase() === 'null') return '000';
+  let a = 0;
+  let d = 0;
+  let m = 0;
+  for (const char of key.toUpperCase()) {
+    if (char === 'A') a = 1;
+    else if (char === 'D') d = 1;
+    else if (char === 'M') m = 1;
+    else throw new Error('未知的 dest「' + dest + '」');
+  }
+  return '' + a + d + m;
+}
+
+function jumpCodeFor(jump) {
+  if (!jump) return '000';
+  const key = jump.trim().toUpperCase();
+  if (!key || key === 'NULL') return '000';
+  if (!JUMP_TABLE[key]) throw new Error('未知的 jump「' + jump + '」');
+  return JUMP_TABLE[key];
+}
+
+function parseCInstruction(code) {
+  let rest = code;
+  let dest = null;
+  let jump = null;
+
+  const eq = rest.indexOf('=');
+  if (eq >= 0) {
+    dest = rest.slice(0, eq).trim();
+    rest = rest.slice(eq + 1);
+    if (!dest) throw new Error('「=」左側缺少 dest');
+  }
+
+  const semi = rest.indexOf(';');
+  if (semi >= 0) {
+    jump = rest.slice(semi + 1).trim();
+    rest = rest.slice(0, semi);
+    if (!jump) throw new Error('「;」右側缺少 jump');
+  }
+
+  const comp = rest.trim();
+  if (!comp) throw new Error('C-指令缺少 comp 區段');
+  if (comp.includes('=') || comp.includes(';')) {
+    throw new Error('C-指令語法錯誤：「' + code + '」');
+  }
+  return { dest, comp, jump };
+}
+
+/* =====================================================================
+   Assembler (two passes, keeps original line numbers)
+   ===================================================================== */
+
+function assemble(source) {
+  const symbols = new Map(Object.entries(PREDEFINED));
+  const labels = [];
+  const labelMap = new Map();
+  const variables = [];
+  const variableMap = new Map();
+  const errors = [];
+  const instructions = [];
+  const rawLines = String(source == null ? '' : source).split(/\r?\n/);
+  let rom = 0;
+
+  /* ---- First pass: labels are virtual, they do not consume ROM ---- */
+  rawLines.forEach((raw, index) => {
+    const line = index + 1;
+    const code = stripComment(raw).trim();
+    if (!code) return;
+
+    if (code.startsWith('(')) {
+      if (!code.endsWith(')')) {
+        errors.push({ line, message: '標籤格式錯誤：必須以 ")" 結尾', source: code });
+        return;
+      }
+      const name = code.slice(1, -1).trim();
+      if (!name) {
+        errors.push({ line, message: '標籤名稱不可為空', source: code });
+        return;
+      }
+      if (!SYMBOL_RE.test(name)) {
+        errors.push({ line, message: '非法標籤名稱「' + name + '」', source: code });
+        return;
+      }
+      if (Object.prototype.hasOwnProperty.call(PREDEFINED, name)) {
+        errors.push({ line, message: '不可重新定義預定義符號「' + name + '」', source: code });
+        return;
+      }
+      if (labelMap.has(name)) {
+        errors.push({
+          line,
+          message: '標籤「' + name + '」重複定義（首次出現於 ROM ' + labelMap.get(name) + '）',
+          source: code,
+        });
+        return;
+      }
+      labelMap.set(name, rom);
+      labels.push({ name, address: rom });
+      symbols.set(name, rom);
+      return;
+    }
+
+    instructions.push({ line, code, rom });
+    rom += 1;
+  });
+
+  /* ---- Second pass: variables + machine code ---- */
+  let ram = 16;
+  const words = [];
+  const rows = [];
+
+  instructions.forEach((instruction) => {
+    const { line, code, rom: romAddress } = instruction;
+    try {
+      if (code.startsWith('@')) {
+        const value = code.slice(1).trim();
+        if (!value) throw new Error('「@」後面缺少數值或符號');
+
+        let address;
+        let symbolName = null;
+
+        if (DECIMAL_RE.test(value)) {
+          address = parseInt(value, 10);
+          if (address > 32767) {
+            throw new Error('A-指令數值 ' + address + ' 超出 15-bit 範圍（0–32767）');
+          }
+        } else {
+          if (!SYMBOL_RE.test(value)) throw new Error('非法符號「' + value + '」');
+          symbolName = value;
+          if (symbols.has(value)) {
+            address = symbols.get(value);
+          } else {
+            if (ram > 32767) throw new Error('變數位址超出 RAM 範圍（> 32767）');
+            address = ram;
+            ram += 1;
+            symbols.set(value, address);
+            variableMap.set(value, address);
+            variables.push({ name: value, address });
+          }
+        }
+
+        const binary = '0' + pad15(address);
+        words.push(binary);
+        rows.push({
+          line,
+          rom: romAddress,
+          source: code,
+          binary,
+          kind: 'A',
+          address,
+          symbol: symbolName,
+        });
+      } else {
+        const { dest, comp, jump } = parseCInstruction(code);
+        const compCode = compCodeFor(comp);
+        const destCode = destCodeFor(dest);
+        const jumpCode = jumpCodeFor(jump);
+        const binary = '111' + compCode + destCode + jumpCode;
+        words.push(binary);
+        rows.push({
+          line,
+          rom: romAddress,
+          source: code,
+          binary,
+          kind: 'C',
+          a: compCode[0],
+          comp: compCode.slice(1),
+          compText: comp,
+          destText: dest || 'null',
+          destBits: destCode,
+          jumpText: jump || 'null',
+          jumpBits: jumpCode,
+        });
+      }
+    } catch (error) {
+      errors.push({ line, message: error.message, source: code });
+      words.push('0000000000000000');
+    }
+  });
+
+  errors.sort((a, b) => a.line - b.line);
+
+  return {
+    output: words.join('\n'),
+    words,
+    rows,
+    labels,
+    variables,
+    errors,
+    symbols,
+  };
+}
+
+/* =====================================================================
+   Disassembler (.hack -> .asm)
+   ===================================================================== */
+
+function disassemble(source) {
+  const rawLines = String(source == null ? '' : source).split(/\r?\n/);
+  const output = [];
+  const rows = [];
+  const errors = [];
+
+  rawLines.forEach((raw, index) => {
+    const line = index + 1;
+    const code = stripComment(raw).trim();
+    if (!code) return;
+
+    const bits = code.replace(/\s+/g, '');
+    if (!BINARY_RE.test(bits)) {
+      errors.push({ line, message: '必須是 16 位元的二進位字串（僅含 0 與 1）', source: code });
+      output.push('');
+      return;
+    }
+
+    if (bits[0] === '0') {
+      const address = parseInt(bits.slice(1), 2);
+      const asm = '@' + address;
+      output.push(asm);
+      rows.push({
+        line,
+        rom: rows.length,
+        source: asm,
+        binary: bits,
+        kind: 'A',
+        address,
+        symbol: null,
+      });
+      return;
+    }
+
+    if (bits.slice(0, 3) !== '111') {
+      errors.push({
+        line,
+        message: '無效指令：首位必須是 0（A-指令）或以 111 開頭（C-指令）',
+        source: code,
+      });
+      output.push('');
+      return;
+    }
+
+    const compCode = bits.slice(3, 10);
+    const destCode = bits.slice(10, 13);
+    const jumpCode = bits.slice(13, 16);
+    const compText = COMP_REVERSE[compCode];
+
+    if (!compText) {
+      errors.push({ line, message: '未知的 comp 位元組合「' + compCode + '」', source: code });
+      output.push('');
+      return;
+    }
+
+    const destText = DEST_REVERSE[destCode];
+    const jumpText = JUMP_REVERSE[jumpCode];
+    const asm =
+      (destText === 'null' ? '' : destText + '=') +
+      compText +
+      (jumpText === 'null' ? '' : ';' + jumpText);
+
+    output.push(asm);
+    rows.push({
+      line,
+      rom: rows.length,
+      source: asm,
+      binary: bits,
+      kind: 'C',
+      a: compCode[0],
+      comp: compCode.slice(1),
+      compText,
+      destText,
+      destBits: destCode,
+      jumpText,
+      jumpBits: jumpCode,
+    });
+  });
+
+  errors.sort((a, b) => a.line - b.line);
+
+  return {
+    output: output.join('\n'),
+    rows,
+    errors,
+  };
+}
+/* =====================================================================
+   DOM references + state
+   ===================================================================== */
+
+const $ = (selector) => document.querySelector(selector);
+
+const asmEditor = $('#asmEditor');
+const hackEditor = $('#hackEditor');
+const asmGutter = $('#asmGutter');
+const hackGutter = $('#hackGutter');
+const errorBar = $('#errorBar');
+const breakdownBody = $('#breakdownBody');
+const symbolContent = $('#symbolContent');
+const diffInput = $('#diffInput');
+const diffResult = $('#diffResult');
+const diffBadge = $('#diffBadge');
+const diffShowAll = $('#diffShowAll');
+const toastEl = $('#toast');
+const dropOverlay = $('#dropOverlay');
+const themeToggle = $('#themeToggle');
+
+const THEME_KEY = 'n2t-workbench-theme';
+
+const state = {
+  mode: 'asm2hack',
+  fileName: 'Prog',
+  asmResult: null,
+  disResult: null,
+};
+
+let asmErrorLines = new Set();
+let hackErrorLines = new Set();
+let convertTimer = null;
+let diffTimer = null;
+let toastTimer = null;
+
+const ICON_WARN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><path d="M12 9v4M12 17h.01"></path></svg>';
+const ICON_TABLE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M3 9h18M3 15h18M9 3v18"></path></svg>';
+const ICON_SYMBOL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h16M4 15h16M10 3L8 21M16 3l-2 18"></path></svg>';
+const ICON_DIFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"></circle><circle cx="18" cy="18" r="3"></circle><path d="M6 9v6a3 3 0 0 0 3 3h6M18 15V9a3 3 0 0 0-3-3H9"></path></svg>';
+const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>';
+
+/* =====================================================================
+   Editor gutters / mode / conversion
+   ===================================================================== */
+
+function lineCount(value) {
+  return String(value).split('\n').length;
+}
+
+function renderGutter(gutter, editor, errorLines) {
+  const total = lineCount(editor.value);
+  const focused = document.activeElement === editor;
+  const caretLine = focused
+    ? editor.value.slice(0, editor.selectionStart).split('\n').length
+    : -1;
+  const parts = [];
+  for (let i = 1; i <= total; i += 1) {
+    let cls = 'gutter-line';
+    if (errorLines.has(i)) cls += ' err';
+    if (i === caretLine) cls += ' active';
+    parts.push('<div class="' + cls + '">' + i + '</div>');
+  }
+  gutter.innerHTML = parts.join('');
+  gutter.scrollTop = editor.scrollTop;
+}
+
+function refreshGutters() {
+  renderGutter(asmGutter, asmEditor, asmErrorLines);
+  renderGutter(hackGutter, hackEditor, hackErrorLines);
+}
+
+function setEditorValue(editor, value) {
+  if (editor.value === value) return;
+  const top = editor.scrollTop;
+  editor.value = value;
+  editor.scrollTop = top;
+}
+
+function setMode(mode) {
+  state.mode = mode;
+  const isAsmMode = mode === 'asm2hack';
+
+  document.querySelectorAll('.mode-btn').forEach((button) => {
+    const active = button.dataset.mode === mode;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-pressed', String(active));
+  });
+
+  const asmPane = $('#asmPane');
+  const hackPane = $('#hackPane');
+  asmPane.classList.toggle('is-source', isAsmMode);
+  asmPane.classList.toggle('is-target', !isAsmMode);
+  hackPane.classList.toggle('is-source', !isAsmMode);
+  hackPane.classList.toggle('is-target', isAsmMode);
+
+  $('#asmBadge').textContent = isAsmMode ? '輸入' : '輸出';
+  $('#hackBadge').textContent = isAsmMode ? '輸出' : '輸入';
+  $('#chipMode').textContent = isAsmMode ? 'ASM → HACK' : 'HACK → ASM';
+
+  const dot = $('#modeDot');
+  dot.style.background = isAsmMode ? 'var(--accent)' : 'var(--accent-2)';
+  dot.style.boxShadow = isAsmMode
+    ? '0 0 9px var(--accent)'
+    : '0 0 9px var(--accent-2)';
+}
+
+function scheduleConvert(mode) {
+  clearTimeout(convertTimer);
+  convertTimer = setTimeout(() => convert(mode), 70);
+}
+
+function convert(mode) {
+  const direction = mode || state.mode;
+  if (state.mode !== direction) setMode(direction);
+
+  if (direction === 'asm2hack') {
+    const result = assemble(asmEditor.value);
+    state.asmResult = result;
+    asmErrorLines = new Set(result.errors.map((error) => error.line));
+    hackErrorLines = new Set();
+    setEditorValue(hackEditor, result.output);
+    refreshGutters();
+    renderAll(result, 'asm2hack');
+  } else {
+    const result = disassemble(hackEditor.value);
+    state.disResult = result;
+    hackErrorLines = new Set(result.errors.map((error) => error.line));
+    asmErrorLines = new Set();
+    setEditorValue(asmEditor, result.output);
+    refreshGutters();
+    renderAll(result, 'hack2asm');
+  }
+}
+
+/* =====================================================================
+   Rendering — status, errors, breakdown, symbols, footer, diff
+   ===================================================================== */
+
+function renderAll(result, mode) {
+  $('#chipCount').textContent = result.rows.length;
+  $('#chipLabels').textContent = mode === 'asm2hack' ? result.labels.length : '—';
+  $('#chipVars').textContent = mode === 'asm2hack' ? result.variables.length : '—';
+
+  const errorCount = result.errors.length;
+  $('#chipErrors').textContent = errorCount;
+  $('#chipErr').classList.toggle('has-error', errorCount > 0);
+
+  renderErrorBar(result, mode);
+  renderBreakdown(result);
+  renderSymbols(result, mode);
+  updateFooters();
+  renderDiff();
+}
+
+function renderErrorBar(result, mode) {
+  if (!result.errors.length) {
+    errorBar.hidden = true;
+    errorBar.innerHTML = '';
+    return;
+  }
+
+  errorBar.hidden = false;
+  const shown = result.errors.slice(0, 8);
+  const items = shown.map((error) => {
+    const source = error.source
+      ? ' <span class="src">· ' + escapeHtml(error.source) + '</span>'
+      : '';
+    return (
+      '<li data-line="' + error.line + '">' +
+      '<span class="ln">L' + error.line + '</span>' +
+      escapeHtml(error.message) + source +
+      '</li>'
+    );
+  }).join('');
+
+  const more = result.errors.length > shown.length
+    ? '<div class="more">…還有 ' + (result.errors.length - shown.length) + ' 個錯誤</div>'
+    : '';
+
+  errorBar.innerHTML =
+    '<div class="head">' + ICON_WARN + '找到 ' + result.errors.length + ' 個錯誤 · 點擊可跳至該行</div>' +
+    '<ul>' + items + '</ul>' + more;
+
+  errorBar.querySelectorAll('li[data-line]').forEach((item) => {
+    item.addEventListener('click', () => {
+      const editor = mode === 'asm2hack' ? asmEditor : hackEditor;
+      jumpToLine(editor, Number(item.dataset.line));
+    });
+  });
+}
+
+function jumpToLine(editor, line) {
+  const lines = editor.value.split('\n');
+  const clamped = Math.max(1, Math.min(line, lines.length));
+  let offset = 0;
+  for (let i = 0; i < clamped - 1; i += 1) offset += lines[i].length + 1;
+  editor.focus();
+  editor.setSelectionRange(offset, offset + lines[clamped - 1].length);
+  editor.scrollTop = Math.max(0, (clamped - 4) * 22);
+  refreshGutters();
+}
+
+function bitsHtml(row) {
+  if (row.kind === 'A') {
+    const symbolNote = row.symbol ? '（' + row.symbol + '）' : '';
+    return (
+      '<span class="seg seg-op" title="Opcode 0：A-指令">0</span>' +
+      '<span class="seg seg-val" title="15-bit 位址 = ' + row.address + symbolNote + '">' +
+      row.binary.slice(1) +
+      '</span>'
+    );
+  }
+
+  return (
+    '<span class="seg seg-op" title="Opcode 111：C-指令">111</span>' +
+    '<span class="seg seg-a" title="a = ' + row.a + '：comp 使用 ' +
+      (row.a === '1' ? 'M（RAM[A]）' : 'A 暫存器') + '">' + row.a + '</span>' +
+    '<span class="seg seg-comp" title="comp = ' + escapeHtml(row.compText) + ' → ' + row.comp + '">' +
+      row.comp + '</span>' +
+    '<span class="seg seg-dest" title="dest = ' + escapeHtml(row.destText) + ' → ' + row.destBits + '">' +
+      row.destBits + '</span>' +
+    '<span class="seg seg-jump" title="jump = ' + escapeHtml(row.jumpText) + ' → ' + row.jumpBits + '">' +
+      row.jumpBits + '</span>'
+  );
+}
+
+function decodeHtml(row) {
+  if (row.kind === 'A') {
+    let html = '<span class="dec-a">@' + row.address + '</span>';
+    if (row.symbol) html += '<span class="sym-tag">' + escapeHtml(row.symbol) + '</span>';
+    return html;
+  }
+
+  const dest = row.destText !== 'null'
+    ? '<span class="dec-dest">' + escapeHtml(row.destText) + '</span>='
+    : '';
+  const comp = '<span class="dec-comp">' + escapeHtml(row.compText) + '</span>';
+  const jump = row.jumpText !== 'null'
+    ? ';<span class="dec-jump">' + escapeHtml(row.jumpText) + '</span>'
+    : '';
+  return dest + comp + jump;
+}
+
+function renderBreakdown(result) {
+  $('#tabBreakdownCount').textContent = result.rows.length;
+
+  if (!result.rows.length) {
+    breakdownBody.innerHTML =
+      '<tr><td colspan="5"><div class="empty">' + ICON_TABLE +
+      '<strong>尚無有效指令</strong><span>開始輸入組合語言，或從上方載入官方範例。</span></div></td></tr>';
+    return;
+  }
+
+  breakdownBody.innerHTML = result.rows.map((row) => (
+    '<tr>' +
+      '<td class="num">' + row.line + '</td>' +
+      '<td class="num">' + row.rom + '</td>' +
+      '<td class="src">' + escapeHtml(row.source) + '</td>' +
+      '<td class="bits">' + bitsHtml(row) + '</td>' +
+      '<td class="decode">' + decodeHtml(row) + '</td>' +
+    '</tr>'
+  )).join('');
+}
+
+function symbolCard(title, count, rowsHtml, extraClass, note) {
+  return (
+    '<div class="sym-card ' + (extraClass || '') + '">' +
+      '<h3>' + title + '<span class="count">' + count + '</span></h3>' +
+      '<div class="sym-list">' + rowsHtml + '</div>' +
+      (note ? '<div class="sym-note">' + note + '</div>' : '') +
+    '</div>'
+  );
+}
+
+function renderSymbols(result, mode) {
+  if (mode !== 'asm2hack') {
+    $('#tabSymbolCount').textContent = '—';
+    symbolContent.innerHTML =
+      '<div class="empty">' + ICON_SYMBOL +
+      '<strong>反組譯模式不建立符號表</strong>' +
+      '<span>切回「ASM → HACK」模式即可檢視標籤與變數配置。</span></div>';
+    return;
+  }
+
+  const labels = result.labels.slice().sort((a, b) => a.address - b.address || a.name.localeCompare(b.name));
+  const variables = result.variables.slice().sort((a, b) => a.address - b.address || a.name.localeCompare(b.name));
+  $('#tabSymbolCount').textContent = labels.length + variables.length;
+
+  const predefinedRows = PREDEFINED_ORDER.map((name) => (
+    '<div class="sym-row"><span class="sym-name">' + name + '</span>' +
+    '<span class="sym-val">' + PREDEFINED[name] + '</span></div>'
+  )).join('');
+
+  const labelRows = labels.length
+    ? labels.map((item) => (
+        '<div class="sym-row"><span class="sym-name">' + escapeHtml(item.name) + '</span>' +
+        '<span class="sym-val">' + item.address + '</span></div>'
+      )).join('')
+    : '<div class="sym-empty">尚未定義任何標籤</div>';
+
+  const variableRows = variables.length
+    ? variables.map((item) => (
+        '<div class="sym-row"><span class="sym-name">' + escapeHtml(item.name) + '</span>' +
+        '<span class="sym-val">' + item.address + '</span></div>'
+      )).join('')
+    : '<div class="sym-empty">尚未配置任何自訂變數</div>';
+
+  symbolContent.innerHTML =
+    '<div class="symbol-grid">' +
+      symbolCard('預定義符號 · ROM/RAM', PREDEFINED_ORDER.length, predefinedRows, '', 'R0–R15、SP/LCL/ARG/THIS/THAT、SCREEN、KBD 皆已內建。') +
+      symbolCard('標籤 Labels · ROM', labels.length, labelRows, '', '標籤不佔用 ROM 行號；數值為 0-based ROM Address。') +
+      symbolCard('自訂變數 Variables · RAM', variables.length, variableRows, 'vars', '首次出現時從 RAM[16] 開始依序分配。') +
+    '</div>';
+}
+
+function updateFooters() {
+  const asmLines = lineCount(asmEditor.value);
+  const hackWords = hackEditor.value.split(/\r?\n/).filter((line) => line.trim()).length;
+  $('#asmMeta').textContent = asmLines + ' 行';
+  $('#hackMeta').textContent = hackWords + ' 個 16-bit 指令';
+}
+
+/* =====================================================================
+   Diff checker
+   ===================================================================== */
+
+function normalizeHackLines(text) {
+  return String(text == null ? '' : text)
+    .split(/\r?\n/)
+    .map((line) => stripComment(line).replace(/\s+/g, ''))
+    .filter(Boolean);
+}
+
+function compareHack(expectedText, actualText) {
+  const expected = normalizeHackLines(expectedText);
+  const actual = normalizeHackLines(actualText);
+  const total = Math.max(expected.length, actual.length);
+  const rows = [];
+  let mismatch = 0;
+
+  for (let i = 0; i < total; i += 1) {
+    const exp = i < expected.length ? expected[i] : null;
+    const act = i < actual.length ? actual[i] : null;
+    let status = 'ok';
+    if (exp === null) status = 'extra';
+    else if (act === null) status = 'missing';
+    else if (exp !== act) status = 'diff';
+    if (status !== 'ok') mismatch += 1;
+    rows.push({ index: i + 1, expected: exp, actual: act, status });
+  }
+
+  return {
+    rows,
+    mismatch,
+    total,
+    expectedCount: expected.length,
+    actualCount: actual.length,
+  };
+}
+
+function renderDiff() {
+  const expectedText = diffInput.value;
+
+  if (!normalizeHackLines(expectedText).length) {
+    diffBadge.className = 'badge';
+    diffBadge.textContent = '等待輸入';
+    diffResult.innerHTML =
+      '<div class="empty">' + ICON_DIFF +
+      '<strong>尚未貼上標準解答</strong>' +
+      '<span>將官方 Assembler 產生的 .hack 內容貼到左側，即會自動逐行比對。</span></div>';
+    return;
+  }
+
+  const comparison = compareHack(expectedText, hackEditor.value);
+
+  if (comparison.mismatch === 0) {
+    diffBadge.className = 'badge ok';
+    diffBadge.textContent = '✓ 完全一致 · ' + comparison.total + ' 行';
+  } else {
+    diffBadge.className = 'badge bad';
+    diffBadge.textContent = '✗ ' + comparison.mismatch + ' 行不一致';
+  }
+
+  const showAll = diffShowAll.checked;
+  const visibleRows = comparison.rows.filter((row) => showAll || row.status !== 'ok');
+
+  if (!visibleRows.length) {
+    diffResult.innerHTML =
+      '<div class="diff-success">' +
+        '<div class="big">' + ICON_CHECK + '</div>' +
+        '<strong>逐行比對通過</strong>' +
+        '<span>目前輸出與標準解答完全一致（共 ' + comparison.total + ' 行）</span>' +
+      '</div>';
+    return;
+  }
+
+  const bodyRows = visibleRows.map((row) => {
+    let cls = 'okrow';
+    let pill = '<span class="pill ok">一致</span>';
+    if (row.status === 'diff') {
+      cls = 'diff';
+      pill = '<span class="pill bad">不同</span>';
+    } else if (row.status === 'missing') {
+      cls = 'missing';
+      pill = '<span class="pill warn">缺少</span>';
+    } else if (row.status === 'extra') {
+      cls = 'extra';
+      pill = '<span class="pill extra">多出</span>';
+    }
+    return (
+      '<tr class="' + cls + '">' +
+        '<td class="num">' + row.index + '</td>' +
+        '<td class="mono">' + (row.expected === null ? '—' : escapeHtml(row.expected)) + '</td>' +
+        '<td class="mono">' + (row.actual === null ? '—' : escapeHtml(row.actual)) + '</td>' +
+        '<td>' + pill + '</td>' +
+      '</tr>'
+    );
+  }).join('');
+
+  const summary = comparison.mismatch > 0
+    ? '<div class="diff-summary">標準 ' + comparison.expectedCount + ' 行 · 輸出 ' +
+      comparison.actualCount + ' 行 · <b>' + comparison.mismatch + '</b> 行不一致</div>'
+    : '<div class="diff-summary">全部 ' + comparison.total + ' 行一致</div>';
+
+  diffResult.innerHTML =
+    summary +
+    '<table class="diff-table">' +
+      '<thead><tr><th>指令</th><th>標準解答</th><th>目前輸出</th><th>狀態</th></tr></thead>' +
+      '<tbody>' + bodyRows + '</tbody>' +
+    '</table>';
+}
+/* =====================================================================
+   Official Nand2Tetris test programs
+   ===================================================================== */
+
+const PRESETS = {
+  'Add.asm': `// Adds 2 to 5 and stores the result in address 0
+@2
+D=A
+@3
+D=D+A
+@0
+M=D
+`,
+  'Max.asm': `// Computes R2 = max(R0, R1)  (R0,R1,R2 refer to RAM[0],RAM[1],RAM[2])
+
+@R0
+D=M              // D = first number
+@R1
+D=D-M            // D = first number - second number
+@OUTPUT_FIRST
+D;JGT            // if D>0 (first is greater) goto output_first
+@R1
+D=M              // D = second number
+@OUTPUT_D
+0;JMP            // goto output_d
+(OUTPUT_FIRST)
+@R0
+D=M              // D = first number
+(OUTPUT_D)
+@R2
+M=D              // M[2] = D (greatest number)
+(INFINITE_LOOP)
+@INFINITE_LOOP
+0;JMP            // infinite loop
+`,
+  'Rect.asm': `// Draws a rectangle at the top-left corner of the screen.
+// The rectangle is 16 pixels wide and R0 pixels high.
+
+@0
+D=M
+@INFINITE_LOOP
+D;JLE
+@counter
+M=D
+@SCREEN
+D=A
+@address
+M=D
+(LOOP)
+@address
+A=M
+M=-1
+@address
+D=M
+D=D+1
+@32
+D=D+A
+@address
+M=D
+@counter
+MD=M-1
+@LOOP
+D;JGT
+(INFINITE_LOOP)
+@INFINITE_LOOP
+0;JMP
+`,
+};
+
+/* =====================================================================
+   Small utilities
+   ===================================================================== */
+
+function showToast(message, isError) {
+  toastEl.textContent = message;
+  toastEl.classList.toggle('error', Boolean(isError));
+  toastEl.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2600);
+}
+
+function readSavedTheme() {
+  try {
+    const saved = localStorage.getItem(THEME_KEY);
+    if (saved === 'light' || saved === 'dark') return saved;
+  } catch (error) { /* localStorage may be unavailable on file:// */ }
+  return 'dark';
+}
+
+function applyTheme(theme, persist) {
+  const next = theme === 'light' ? 'light' : 'dark';
+  const isDark = next === 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  themeToggle.title = isDark ? '切換為淺色主題' : '切換為深色主題';
+  themeToggle.setAttribute('aria-label', themeToggle.title);
+  themeToggle.setAttribute('aria-pressed', String(!isDark));
+  if (persist) {
+    try { localStorage.setItem(THEME_KEY, next); } catch (error) { /* ignore */ }
+    showToast(isDark ? '已切換為深色主題' : '已切換為淺色主題');
+  }
+}
+
+function baseName(name) {
+  const base = String(name || 'Prog').replace(/\.[^.]+$/, '');
+  return base || 'Prog';
+}
+
+function looksLikeHack(text) {
+  const lines = normalizeHackLines(text);
+  return lines.length > 0 && lines.every((line) => BINARY_RE.test(line));
+}
+
+function downloadFile(filename, content) {
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+
+async function copyText(text, label) {
+  if (!text || !text.trim()) {
+    showToast('目前沒有可複製的內容', true);
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(text);
+    showToast('已複製' + (label || '內容') + '到剪貼簿');
+  } catch (error) {
+    const helper = document.createElement('textarea');
+    helper.value = text;
+    helper.style.position = 'fixed';
+    helper.style.opacity = '0';
+    document.body.appendChild(helper);
+    helper.select();
+    try {
+      document.execCommand('copy');
+      showToast('已複製' + (label || '內容') + '到剪貼簿');
+    } catch (fallbackError) {
+      showToast('複製失敗，請手動選取內容', true);
+    }
+    helper.remove();
+  }
+}
+
+function loadPreset(name, silent) {
+  const source = PRESETS[name];
+  if (!source) return;
+  state.fileName = baseName(name);
+  setEditorValue(asmEditor, source);
+  setMode('asm2hack');
+  convert('asm2hack');
+  if (!silent) showToast('已載入官方範例 ' + name);
+}
+
+function handleFile(file) {
+  const name = file.name || 'upload.txt';
+  const reader = new FileReader();
+  reader.onload = () => {
+    const text = String(reader.result || '');
+    const isHackFile = /\.hack$/i.test(name) || (!/\.asm$/i.test(name) && looksLikeHack(text));
+    state.fileName = baseName(name);
+
+    if (isHackFile) {
+      setEditorValue(hackEditor, text);
+      setMode('hack2asm');
+      convert('hack2asm');
+    } else {
+      setEditorValue(asmEditor, text);
+      setMode('asm2hack');
+      convert('asm2hack');
+    }
+    showToast('已載入 ' + name + '（' + (isHackFile ? 'HACK → ASM' : 'ASM → HACK') + '）');
+  };
+  reader.onerror = () => showToast('讀取檔案失敗，請確認檔案格式', true);
+  reader.readAsText(file, 'utf-8');
+}
+
+/* =====================================================================
+   Event wiring
+   ===================================================================== */
+
+document.querySelectorAll('.mode-btn').forEach((button) => {
+  button.addEventListener('click', () => {
+    const mode = button.dataset.mode;
+    setMode(mode);
+    convert(mode);
+  });
+});
+
+asmEditor.addEventListener('input', () => {
+  asmErrorLines = new Set();
+  refreshGutters();
+  if (state.mode !== 'asm2hack') setMode('asm2hack');
+  scheduleConvert('asm2hack');
+});
+
+hackEditor.addEventListener('input', () => {
+  hackErrorLines = new Set();
+  refreshGutters();
+  if (state.mode !== 'hack2asm') setMode('hack2asm');
+  scheduleConvert('hack2asm');
+});
+
+asmEditor.addEventListener('scroll', () => {
+  asmGutter.scrollTop = asmEditor.scrollTop;
+});
+
+hackEditor.addEventListener('scroll', () => {
+  hackGutter.scrollTop = hackEditor.scrollTop;
+});
+
+['keyup', 'click', 'select', 'focus'].forEach((eventName) => {
+  asmEditor.addEventListener(eventName, refreshGutters);
+  hackEditor.addEventListener(eventName, refreshGutters);
+});
+
+document.querySelectorAll('.tab').forEach((tab) => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach((item) => {
+      const active = item === tab;
+      item.classList.toggle('active', active);
+      item.setAttribute('aria-selected', String(active));
+    });
+    document.querySelectorAll('.tab-panel').forEach((panel) => {
+      panel.classList.toggle('active', panel.id === 'panel-' + tab.dataset.tab);
+    });
+  });
+});
+
+$('#presetSelect').addEventListener('change', (event) => {
+  const name = event.target.value;
+  if (!name) return;
+  loadPreset(name, false);
+  event.target.value = '';
+});
+
+themeToggle.addEventListener('click', () => {
+  const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+  applyTheme(current === 'light' ? 'dark' : 'light', true);
+});
+
+$('#uploadBtn').addEventListener('click', () => $('#fileInput').click());
+
+$('#fileInput').addEventListener('change', (event) => {
+  const file = event.target.files && event.target.files[0];
+  if (file) handleFile(file);
+  event.target.value = '';
+});
+
+$('#downloadHackBtn').addEventListener('click', () => {
+  const content = hackEditor.value;
+  if (!content.trim()) {
+    showToast('目前沒有 .hack 內容可下載', true);
+    return;
+  }
+  downloadFile(state.fileName + '.hack', content.endsWith('\n') ? content : content + '\n');
+  showToast('已下載 ' + state.fileName + '.hack');
+});
+
+$('#downloadAsmBtn').addEventListener('click', () => {
+  const content = asmEditor.value;
+  if (!content.trim()) {
+    showToast('目前沒有 .asm 內容可下載', true);
+    return;
+  }
+  downloadFile(state.fileName + '.asm', content.endsWith('\n') ? content : content + '\n');
+  showToast('已下載 ' + state.fileName + '.asm');
+});
+
+$('#copyBtn').addEventListener('click', () => {
+  const isAsmMode = state.mode === 'asm2hack';
+  copyText(isAsmMode ? hackEditor.value : asmEditor.value, isAsmMode ? ' .hack 結果' : ' .asm 結果');
+});
+
+$('#copyAsmBtn').addEventListener('click', () => copyText(asmEditor.value, ' .asm'));
+$('#copyHackBtn').addEventListener('click', () => copyText(hackEditor.value, ' .hack'));
+
+$('#clearAsmBtn').addEventListener('click', () => {
+  setEditorValue(asmEditor, '');
+  setMode('asm2hack');
+  convert('asm2hack');
+  showToast('已清空組合語言編輯區');
+});
+
+$('#clearHackBtn').addEventListener('click', () => {
+  setEditorValue(hackEditor, '');
+  setMode('hack2asm');
+  convert('hack2asm');
+  showToast('已清空機器碼編輯區');
+});
+
+diffInput.addEventListener('input', () => {
+  clearTimeout(diffTimer);
+  diffTimer = setTimeout(renderDiff, 120);
+});
+
+diffShowAll.addEventListener('change', renderDiff);
+
+$('#diffClearBtn').addEventListener('click', () => {
+  diffInput.value = '';
+  renderDiff();
+  diffInput.focus();
+});
+
+let dragDepth = 0;
+
+window.addEventListener('dragenter', (event) => {
+  if (!event.dataTransfer) return;
+  const types = Array.from(event.dataTransfer.types || []);
+  if (!types.includes('Files')) return;
+  event.preventDefault();
+  dragDepth += 1;
+  dropOverlay.classList.add('show');
+});
+
+window.addEventListener('dragover', (event) => {
+  event.preventDefault();
+});
+
+window.addEventListener('dragleave', () => {
+  dragDepth = Math.max(0, dragDepth - 1);
+  if (dragDepth === 0) dropOverlay.classList.remove('show');
+});
+
+window.addEventListener('dragend', () => {
+  dragDepth = 0;
+  dropOverlay.classList.remove('show');
+});
+
+window.addEventListener('drop', (event) => {
+  event.preventDefault();
+  dragDepth = 0;
+  dropOverlay.classList.remove('show');
+  const file = event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0];
+  if (file) handleFile(file);
+});
+
+document.addEventListener('keydown', (event) => {
+  if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+    event.preventDefault();
+    convert(state.mode);
+  }
+});
+
+/* =====================================================================
+   Boot
+   ===================================================================== */
+
+setMode('asm2hack');
+applyTheme(readSavedTheme(), false);
+loadPreset('Add.asm', true);
+refreshGutters();
+</script>
+</body>
+</html>
