@@ -2,6 +2,8 @@
 
 以 Python 3 標準函式庫實作的 Nand2Tetris VM 翻譯器，外加一個可直接部署到 GitHub Pages 的網頁版 Demo。
 
+> 線上 Demo：<https://chifeng-chiu.github.io/_co2/08/vmtranslator/web/>
+
 ## 檔案結構
 
 | 檔案 | 說明 |
@@ -46,13 +48,19 @@ python web_demo.py
 
 GitHub Pages 只能放靜態檔案，因此網頁版把翻譯器移植成 `web/translator.js`，在瀏覽器端完成翻譯，輸出與 Python 版逐字相同。
 
-部署步驟：
+部署方式有兩種，`web/` 整個資料夾就是可直接託管的靜態網站：
 
-1. 建立 GitHub repository 並上傳本專案
-2. 進入 repository 的 **Settings → Pages**
-3. 在 **Build and deployment → Source** 選擇 **GitHub Actions**
-4. Push 到 `main`（或 `master`）分支，`.github/workflows/pages.yml` 會自動部署 `web/` 資料夾
-5. 完成後網址為 `https://<帳號>.github.io/<repo>/`
+**A. Deploy from a branch（最簡單，不需 workflow）**
+
+1. 將專案推到 GitHub
+2. **Settings → Pages → Build and deployment → Source** 選 **Deploy from a branch**
+3. 選擇分支與資料夾（`/` 或 `/docs`）
+4. 網址為 `https://<帳號>.github.io/<repo>/<web 所在路徑>/`
+
+**B. GitHub Actions**
+
+1. 在 repo 根目錄加入 workflow，把 `web/` 上傳為 Pages artifact
+2. **Settings → Pages → Source** 選 **GitHub Actions**
 
 > 網頁會自動偵測環境：有本機 Python 後端時顯示 `LOCAL / Python 3`，靜態託管時顯示 `STATIC / Browser JS`。
 

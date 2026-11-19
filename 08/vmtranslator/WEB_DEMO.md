@@ -45,17 +45,16 @@ python web_demo.py --port 8080
 
 ## 部署到 GitHub Pages
 
-Pages 不支援 Python，但 `web/` 是純靜態檔案，可直接託管：
+Pages 不支援 Python，但 `web/` 是純靜態檔案，可直接託管。
 
-1. 將整個專案推到 GitHub（`main` 或 `master` 分支）
+最簡單的方式是 **Deploy from a branch**：
+
+1. 將專案推到 GitHub
 2. Repository → **Settings → Pages**
-3. **Source** 選擇 **GitHub Actions**
-4. 等待 `Deploy web demo to GitHub Pages` workflow 完成
-5. 開啟 `https://<帳號>.github.io/<repo>/`
+3. **Source** 選 **Deploy from a branch**，選擇分支（`main`）與資料夾（`/`）
+4. `web/` 會以靜態路徑提供，例如 `https://<帳號>.github.io/<repo>/web/`
 
-`.github/workflows/pages.yml` 會自動把 `web/` 資料夾上傳為 Pages 網站。
-
-也可以在 **Settings → Pages → Source: Deploy from a branch** 選擇分支與 `/web` 資料夾，但需要在該分支根目錄提供 `web/` 路徑，因此建議使用 GitHub Actions。
+若改用 **GitHub Actions**，在 repo 根目錄加入 workflow 並把 `web/` 上傳為 Pages artifact，即可改由 Actions 部署。
 
 ## 打不開時
 
