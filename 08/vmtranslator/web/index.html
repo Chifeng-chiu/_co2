@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Nand2Tetris Chapter 7 & 8 VM Translator — 將 VM 指令翻譯成 Hack assembly。">
+  <title>Nand2Tetris VM Translator</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%235b50d6'/%3E%3Ctext x='16' y='21' font-family='monospace' font-size='12' font-weight='bold' fill='white' text-anchor='middle'%3EVM%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="ambient ambient-one" aria-hidden="true"></div>
+  <div class="ambient ambient-two" aria-hidden="true"></div>
+  <div class="grid-texture" aria-hidden="true"></div>
+
+  <header class="app-header">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <span>VM</span>
+        <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 8h11"></path>
+          <path d="m9 4 4 4-4 4"></path>
+        </svg>
+      </div>
+      <div class="brand-copy">
+        <div class="brand-title-row">
+          <h1>Nand2Tetris VM Translator</h1>
+          <span class="chapter-pill">CH. 7–8</span>
+        </div>
+        <p>將 VM 指令翻譯成可在 Hack CPU Emulator 執行的組合語言</p>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <div class="pipeline" aria-label="翻譯流程：VM、Parser、CodeWriter、Assembly">
+        <span class="pipeline-step">VM</span>
+        <span class="pipeline-line"></span>
+        <span class="pipeline-step">Parser</span>
+        <span class="pipeline-line"></span>
+        <span class="pipeline-step">Writer</span>
+        <span class="pipeline-line"></span>
+        <span class="pipeline-step pipeline-step-accent">ASM</span>
+      </div>
+      <div class="local-badge" id="runtimeBadge" title="翻譯在瀏覽器或本機 Python 後端執行，原始碼不會上傳">
+        <span class="live-dot" aria-hidden="true"></span>
+        <span id="runtimeLabel">LOCAL</span>
+        <span class="local-divider" aria-hidden="true"></span>
+        <span id="runtimeDetail">Python 3</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="panel source-panel" aria-labelledby="source-title">
+      <div class="panel-heading">
+        <div class="heading-block">
+          <span class="eyebrow"><span class="eyebrow-index">01</span> SOURCE</span>
+          <h2 id="source-title">VM 原始碼</h2>
+        </div>
+        <span class="count-pill" id="fileTotal">0 個檔案</span>
+      </div>
+
+      <div class="mode-switch" role="radiogroup" aria-label="翻譯模式">
+        <label class="mode-option">
+          <input type="radio" name="mode" value="single" checked>
+          <span class="mode-icon" aria-hidden="true">
+            <svg viewBox="0 0 20 20" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 2.8h7l3 3V17H5z"></path>
+              <path d="M12 2.8v3h3"></path>
+            </svg>
+          </span>
+          <span class="mode-copy">
+            <strong>單一檔案</strong>
+            <small>不加入 Bootstrap</small>
+          </span>
+        </label>
+        <label class="mode-option">
+          <input type="radio" name="mode" value="project">
+          <span class="mode-icon" aria-hidden="true">
+            <svg viewBox="0 0 20 20" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2.5 5.5h5l1.5 2h8.5v9h-15z"></path>
+              <path d="M2.5 5.5v-2h5l1.5 2"></path>
+            </svg>
+          </span>
+          <span class="mode-copy">
+            <strong>資料夾專案</strong>
+            <small>有 Sys.vm 時加入 Bootstrap</small>
+          </span>
+        </label>
+      </div>
+
+      <div class="project-name-row" id="projectNameRow" hidden>
+        <label for="projectName">輸出檔名</label>
+        <div class="input-with-suffix">
+          <input id="projectName" type="text" value="Program" maxlength="80" autocomplete="off" spellcheck="false">
+          <span>.asm</span>
+        </div>
+      </div>
+
+      <div class="drop-zone" id="dropZone" tabindex="0" role="button" aria-label="加入 VM 檔案">
+        <input id="fileInput" type="file" accept=".vm" multiple hidden>
+        <input id="folderInput" type="file" webkitdirectory multiple hidden>
+
+        <div class="drop-orbit" aria-hidden="true">
+          <span class="orbit-ring"></span>
+          <span class="drop-icon">
+            <svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 15V3"></path>
+              <path d="m7 8 5-5 5 5"></path>
+              <path d="M5 13v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"></path>
+            </svg>
+          </span>
+        </div>
+        <p class="drop-title">拖放 <code>.vm</code> 檔案到這裡</p>
+        <p class="drop-subtitle">支援多檔與整個資料夾，檔案只會留在本機</p>
+        <div class="drop-actions">
+          <button class="button button-secondary button-small" id="chooseFiles" type="button">
+            <svg viewBox="0 0 18 18" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M5 2.5h6l3 3v10H5z"></path>
+              <path d="M11 2.5v3h3"></path>
+            </svg>
+            選擇檔案
+          </button>
+          <button class="button button-ghost button-small" id="chooseFolder" type="button">
+            <svg viewBox="0 0 18 18" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M2 5h5l1.5 2H16v7H2z"></path>
+            </svg>
+            選擇資料夾
+          </button>
+        </div>
+      </div>
+
+      <div class="file-list-heading">
+        <span class="section-label">FILES</span>
+        <div class="file-list-actions">
+          <button id="exampleBtn" class="text-button" type="button">
+            <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="m8 1.8 1.7 3.5 3.9.6-2.8 2.7.7 3.9L8 10.6l-3.5 1.9.7-3.9-2.8-2.7 3.9-.6z"></path>
+            </svg>
+            載入範例
+          </button>
+          <button id="clearBtn" class="text-button" type="button" disabled>清空</button>
+        </div>
+      </div>
+
+      <div class="file-list-wrap">
+        <ul class="file-list" id="fileList"></ul>
+        <div class="empty-files" id="emptyFiles">
+          <span class="empty-files-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 3.5h8l4 4v13H6z"></path>
+              <path d="M14 3.5v4h4"></path>
+              <path d="M9 12h6M9 15h4"></path>
+            </svg>
+          </span>
+          <span>尚未加入檔案</span>
+          <small>拖曳檔案，或使用上方的選擇按鈕</small>
+        </div>
+      </div>
+
+      <div class="panel-footer">
+        <button class="button button-primary translate-button" id="translateBtn" type="button" disabled>
+          <span class="button-icon" aria-hidden="true">
+            <svg viewBox="0 0 20 20" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 10h13"></path>
+              <path d="m11 5 5 5-5 5"></path>
+            </svg>
+          </span>
+          <span class="button-label">翻譯成 Hack Assembly</span>
+          <span class="spinner" aria-hidden="true"></span>
+        </button>
+        <p class="shortcut-hint"><kbd>Ctrl</kbd><span>+</span><kbd>Enter</kbd><span>快速翻譯</span></p>
+      </div>
+    </section>
+
+    <section class="panel output-panel" aria-labelledby="output-title">
+      <div class="panel-heading output-heading">
+        <div class="heading-block">
+          <span class="eyebrow"><span class="eyebrow-index">02</span> OUTPUT</span>
+          <h2 id="output-title">Hack Assembly</h2>
+        </div>
+        <div class="output-actions">
+          <button class="icon-button" id="copyBtn" type="button" title="複製組譯碼" disabled>
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="9" y="9" width="11" height="11" rx="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            <span>複製</span>
+          </button>
+          <button class="icon-button icon-button-strong" id="downloadBtn" type="button" title="下載 .asm" disabled>
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 3v12"></path>
+              <path d="m7 10 5 5 5-5"></path>
+              <path d="M5 21h14"></path>
+            </svg>
+            <span>下載</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="output-file-strip">
+        <span class="status-dot" id="statusDot" aria-hidden="true"></span>
+        <span class="output-file-label">OUTPUT FILE</span>
+        <span class="output-file-name" id="outputName">等待翻譯</span>
+        <span class="bootstrap-tag" id="bootstrapTag" hidden>BOOTSTRAP</span>
+      </div>
+
+      <div class="editor" id="editor">
+        <div class="editor-topbar">
+          <div class="window-dots" aria-hidden="true">
+            <span></span><span></span><span></span>
+          </div>
+          <span class="editor-filename" id="editorFileName">untitled.asm</span>
+          <span class="editor-language">HACK ASM</span>
+        </div>
+
+        <div class="editor-main">
+          <pre class="line-numbers" id="lineNumbers" aria-hidden="true" hidden></pre>
+          <div class="editor-scroll" id="editorScroll">
+            <pre class="assembly-output" id="assemblyOutput" hidden><code id="assemblyCode"></code></pre>
+            <div class="assembly-placeholder" id="placeholder">
+              <div class="placeholder-visual" aria-hidden="true">
+                <span class="placeholder-bracket">{</span>
+                <span class="placeholder-bars"><i></i><i></i><i></i></span>
+                <span class="placeholder-bracket">}</span>
+              </div>
+              <p>翻譯結果會顯示在這裡</p>
+              <small>加入 VM 檔案後，按「翻譯成 Hack Assembly」</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="output-footer">
+        <div class="meta" id="meta"></div>
+        <div class="status-message" id="statusMessage" role="status" aria-live="polite"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <span>輸出可直接用 Nand2Tetris CPU Emulator 載入測試</span>
+    <span class="footer-separator">/</span>
+    <span id="footerRuntime">翻譯在瀏覽器本機執行，原始碼不會上傳到任何伺服器</span>
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="translator.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
