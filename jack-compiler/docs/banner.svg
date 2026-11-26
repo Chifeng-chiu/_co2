@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="420" viewBox="0 0 1200 420" role="img" aria-labelledby="title desc">
+  <title id="title">Jack Compiler for nand2tetris</title>
+  <desc id="desc">A dark banner showing the Jack compiler pipeline from source code to Hack VM code.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0b1220"/>
+      <stop offset="55%" stop-color="#101b31"/>
+      <stop offset="100%" stop-color="#0b1220"/>
+    </linearGradient>
+    <linearGradient id="title" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#67e8f9"/>
+      <stop offset="55%" stop-color="#60a5fa"/>
+      <stop offset="100%" stop-color="#c4b5fd"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#17243c"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="1" opacity="0.55"/>
+    </pattern>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="420" fill="url(#bg)"/>
+  <rect width="1200" height="420" fill="url(#grid)"/>
+  <circle cx="1060" cy="60" r="180" fill="#22d3ee" opacity="0.05"/>
+  <circle cx="1120" cy="390" r="220" fill="#a78bfa" opacity="0.06"/>
+
+  <!-- left column -->
+  <rect x="64" y="58" width="360" height="34" rx="17" fill="#0f2438" stroke="#1e4b63"/>
+  <circle cx="84" cy="75" r="5" fill="#34d399"/>
+  <text x="98" y="81" font-family="Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif" font-size="15" fill="#a5f3fc">nand2tetris · projects 10 &amp; 11</text>
+
+  <text x="64" y="176" font-family="Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif" font-size="66" font-weight="800" fill="#f8fafc">Jack <tspan fill="url(#title)">Compiler</tspan></text>
+  <text x="66" y="222" font-family="Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif" font-size="22" fill="#94a3b8">From Jack source code to Hack VM code — with project 10 XML output.</text>
+
+  <g font-family="Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif" font-size="15">
+    <rect x="66" y="258" width="128" height="34" rx="17" fill="#12233a" stroke="#27415f"/>
+    <text x="130" y="280" text-anchor="middle" fill="#bfdbfe">Tokenizer</text>
+    <rect x="206" y="258" width="196" height="34" rx="17" fill="#12233a" stroke="#27415f"/>
+    <text x="304" y="280" text-anchor="middle" fill="#bfdbfe">Recursive-descent parser</text>
+    <rect x="414" y="258" width="142" height="34" rx="17" fill="#12233a" stroke="#27415f"/>
+    <text x="485" y="280" text-anchor="middle" fill="#bfdbfe">Symbol table</text>
+    <rect x="568" y="258" width="188" height="34" rx="17" fill="#12233a" stroke="#27415f"/>
+    <text x="662" y="280" text-anchor="middle" fill="#bfdbfe">VM code generator</text>
+  </g>
+
+  <g font-family="Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif" font-size="15">
+    <rect x="66" y="326" width="286" height="42" rx="21" fill="#0d2a22" stroke="#1f6b4f"/>
+    <circle cx="90" cy="347" r="6" fill="#34d399"/>
+    <text x="106" y="353" fill="#a7f3d0">36 tests passing · 0 golden mismatches</text>
+    <rect x="366" y="326" width="228" height="42" rx="21" fill="#241a38" stroke="#5b3f8a"/>
+    <text x="480" y="353" text-anchor="middle" fill="#ddd6fe">7 XML files · 35 VM files</text>
+  </g>
+
+  <!-- right visual -->
+  <rect x="748" y="54" width="392" height="312" rx="24" fill="url(#panel)" stroke="#26364f"/>
+  <rect x="748" y="54" width="392" height="42" rx="24" fill="#1b2a44"/>
+  <rect x="748" y="78" width="392" height="18" fill="#1b2a44"/>
+  <circle cx="772" cy="75" r="5" fill="#f87171"/>
+  <circle cx="790" cy="75" r="5" fill="#fbbf24"/>
+  <circle cx="808" cy="75" r="5" fill="#34d399"/>
+  <text x="828" y="81" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#94a3b8">pipeline.jack</text>
+
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="13">
+    <rect x="776" y="120" width="118" height="42" rx="10" fill="#0f2a3d" stroke="#155e75"/>
+    <text x="835" y="146" text-anchor="middle" fill="#67e8f9">Main.jack</text>
+
+    <rect x="918" y="120" width="118" height="42" rx="10" fill="#13243d" stroke="#1d4ed8"/>
+    <text x="977" y="146" text-anchor="middle" fill="#93c5fd">Tokens</text>
+
+    <rect x="776" y="196" width="118" height="42" rx="10" fill="#1b1a38" stroke="#6d28d9"/>
+    <text x="835" y="222" text-anchor="middle" fill="#c4b5fd">AST</text>
+
+    <rect x="918" y="196" width="118" height="42" rx="10" fill="#0d2a22" stroke="#047857"/>
+    <text x="977" y="222" text-anchor="middle" fill="#6ee7b7">VM code</text>
+
+    <rect x="776" y="272" width="118" height="42" rx="10" fill="#2b2110" stroke="#b45309"/>
+    <text x="835" y="298" text-anchor="middle" fill="#fcd34d">XML</text>
+
+    <rect x="918" y="272" width="118" height="42" rx="10" fill="#2b1524" stroke="#be185d"/>
+    <text x="977" y="298" text-anchor="middle" fill="#f9a8d4">Hack</text>
+  </g>
+
+  <g stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#arrow)">
+    <path d="M 894 141 L 918 141"/>
+    <path d="M 977 162 L 977 179 L 835 179 L 835 196"/>
+    <path d="M 894 217 L 918 217"/>
+    <path d="M 977 238 L 977 255 L 835 255 L 835 272"/>
+    <path d="M 894 293 L 918 293"/>
+  </g>
+
+  <text x="748" y="394" font-family="Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif" font-size="13" fill="#64748b">Pure Python 3 · no external dependencies</text>
+</svg>

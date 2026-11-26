@@ -1,0 +1,161 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="840" viewBox="0 0 1200 840" role="img" aria-labelledby="title desc">
+  <title id="title">Jack to VM example</title>
+  <desc id="desc">A Jack program that sums 1 to 10 on the left and its generated Hack VM code on the right.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0b1220"/>
+      <stop offset="100%" stop-color="#101b31"/>
+    </linearGradient>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M 32 0 L 0 0 0 32" fill="none" stroke="#1e293b" stroke-width="1" opacity="0.45"/>
+    </pattern>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#60a5fa"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="840" fill="url(#bg)"/>
+  <rect width="1200" height="840" fill="url(#grid)"/>
+
+  <text x="40" y="52" font-family="Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif" font-size="32" font-weight="750" fill="#f8fafc">One program, two views</text>
+  <text x="40" y="80" font-family="Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif" font-size="16" fill="#94a3b8">A small loop compiles into explicit stack-machine instructions.</text>
+
+  <!-- left panel -->
+  <rect x="40" y="106" width="520" height="636" rx="18" fill="#0f172a" stroke="#26364f"/>
+  <rect x="40" y="106" width="520" height="46" rx="18" fill="#17243c"/>
+  <rect x="40" y="134" width="520" height="18" fill="#17243c"/>
+  <circle cx="66" cy="129" r="5" fill="#f87171"/>
+  <circle cx="84" cy="129" r="5" fill="#fbbf24"/>
+  <circle cx="102" cy="129" r="5" fill="#34d399"/>
+  <text x="120" y="135" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#cbd5e1">Main.jack</text>
+  <text x="496" y="135" text-anchor="end" font-family="Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif" font-size="12" fill="#64748b">source</text>
+
+  <rect x="62" y="356" width="474" height="24" rx="5" fill="#1e3a5f" opacity="0.55"/>
+  <rect x="62" y="434" width="474" height="24" rx="5" fill="#1e3a5f" opacity="0.35"/>
+
+  <g xml:space="preserve" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="15">
+    <g fill="#64748b" text-anchor="end">
+      <text x="82" y="188">1</text>
+      <text x="82" y="214">2</text>
+      <text x="82" y="240">3</text>
+      <text x="82" y="266">4</text>
+      <text x="82" y="292">5</text>
+      <text x="82" y="318">6</text>
+      <text x="82" y="344">7</text>
+      <text x="82" y="370">8</text>
+      <text x="82" y="396">9</text>
+      <text x="82" y="422">10</text>
+      <text x="82" y="448">11</text>
+      <text x="82" y="474">12</text>
+      <text x="82" y="500">13</text>
+      <text x="82" y="526">14</text>
+      <text x="82" y="552">15</text>
+      <text x="82" y="578">16</text>
+    </g>
+    <g fill="#dbeafe">
+      <text x="104" y="188" fill="#64748b">// Sum 1..10 into a static variable.</text>
+      <text x="104" y="214">class Main {</text>
+      <text x="104" y="240">    static int result;</text>
+      <text x="104" y="292">    function void main() {</text>
+      <text x="104" y="318">        var int i, sum;</text>
+      <text x="104" y="344">        let sum = 0;</text>
+      <text x="104" y="370">        let i = 1;</text>
+      <text x="104" y="396">        while (i &lt; 11) {</text>
+      <text x="104" y="422">            let sum = sum + i;</text>
+      <text x="104" y="448">            let i = i + 1;</text>
+      <text x="104" y="474">        }</text>
+      <text x="104" y="500">        let result = sum;</text>
+      <text x="104" y="526">        return;</text>
+      <text x="104" y="552">    }</text>
+      <text x="104" y="578">}</text>
+    </g>
+  </g>
+
+  <!-- arrow -->
+  <line x1="574" y1="424" x2="628" y2="424" stroke="#60a5fa" stroke-width="3" marker-end="url(#arrow)"/>
+  <text x="601" y="404" text-anchor="middle" font-family="Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif" font-size="12" font-weight="700" fill="#93c5fd">compile</text>
+
+  <!-- right panel -->
+  <rect x="640" y="106" width="520" height="636" rx="18" fill="#0f172a" stroke="#26364f"/>
+  <rect x="640" y="106" width="520" height="46" rx="18" fill="#17243c"/>
+  <rect x="640" y="134" width="520" height="18" fill="#17243c"/>
+  <circle cx="666" cy="129" r="5" fill="#f87171"/>
+  <circle cx="684" cy="129" r="5" fill="#fbbf24"/>
+  <circle cx="702" cy="129" r="5" fill="#34d399"/>
+  <text x="720" y="135" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#cbd5e1">Main.vm</text>
+  <text x="1116" y="135" text-anchor="end" font-family="Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif" font-size="12" fill="#64748b">generated</text>
+
+  <rect x="662" y="166" width="476" height="22" rx="5" fill="#123a2d" opacity="0.65"/>
+  <rect x="662" y="210" width="476" height="22" rx="5" fill="#123a2d" opacity="0.45"/>
+  <rect x="662" y="474" width="476" height="22" rx="5" fill="#123a2d" opacity="0.45"/>
+  <rect x="662" y="562" width="476" height="22" rx="5" fill="#123a2d" opacity="0.45"/>
+
+  <g xml:space="preserve" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="14">
+    <g fill="#64748b" text-anchor="end">
+      <text x="682" y="184">1</text>
+      <text x="682" y="206">2</text>
+      <text x="682" y="228">3</text>
+      <text x="682" y="250">4</text>
+      <text x="682" y="272">5</text>
+      <text x="682" y="294">6</text>
+      <text x="682" y="316">7</text>
+      <text x="682" y="338">8</text>
+      <text x="682" y="360">9</text>
+      <text x="682" y="382">10</text>
+      <text x="682" y="404">11</text>
+      <text x="682" y="426">12</text>
+      <text x="682" y="448">13</text>
+      <text x="682" y="470">14</text>
+      <text x="682" y="492">15</text>
+      <text x="682" y="514">16</text>
+      <text x="682" y="536">17</text>
+      <text x="682" y="558">18</text>
+      <text x="682" y="580">19</text>
+      <text x="682" y="602">20</text>
+      <text x="682" y="624">21</text>
+      <text x="682" y="646">22</text>
+      <text x="682" y="668">23</text>
+      <text x="682" y="690">24</text>
+      <text x="682" y="712">25</text>
+    </g>
+    <g fill="#d1fae5">
+      <text x="704" y="184">function Main.main 2</text>
+      <text x="704" y="206">push constant 0</text>
+      <text x="704" y="228">pop local 1</text>
+      <text x="704" y="250">push constant 1</text>
+      <text x="704" y="272">pop local 0</text>
+      <text x="704" y="294">label WHILE_EXP0</text>
+      <text x="704" y="316">push local 0</text>
+      <text x="704" y="338">push constant 11</text>
+      <text x="704" y="360">lt</text>
+      <text x="704" y="382">not</text>
+      <text x="704" y="404">if-goto WHILE_END0</text>
+      <text x="704" y="426">push local 1</text>
+      <text x="704" y="448">push local 0</text>
+      <text x="704" y="470">add</text>
+      <text x="704" y="492">pop local 1</text>
+      <text x="704" y="514">push local 0</text>
+      <text x="704" y="536">push constant 1</text>
+      <text x="704" y="558">add</text>
+      <text x="704" y="580">pop local 0</text>
+      <text x="704" y="602">goto WHILE_EXP0</text>
+      <text x="704" y="624">label WHILE_END0</text>
+      <text x="704" y="646">push local 1</text>
+      <text x="704" y="668">pop static 0</text>
+      <text x="704" y="690">push constant 0</text>
+      <text x="704" y="712">return</text>
+    </g>
+  </g>
+
+  <!-- footer chips -->
+  <g font-family="Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif" font-size="13">
+    <rect x="40" y="772" width="250" height="36" rx="18" fill="#13243d" stroke="#1d4ed8"/>
+    <text x="165" y="795" text-anchor="middle" fill="#bfdbfe">static result → static 0</text>
+    <rect x="306" y="772" width="178" height="36" rx="18" fill="#13243d" stroke="#1d4ed8"/>
+    <text x="395" y="795" text-anchor="middle" fill="#bfdbfe">i → local 0</text>
+    <rect x="500" y="772" width="190" height="36" rx="18" fill="#13243d" stroke="#1d4ed8"/>
+    <text x="595" y="795" text-anchor="middle" fill="#bfdbfe">sum → local 1</text>
+    <rect x="706" y="772" width="454" height="36" rx="18" fill="#0d2a22" stroke="#047857"/>
+    <text x="933" y="795" text-anchor="middle" fill="#a7f3d0">while → WHILE_EXP0 / WHILE_END0</text>
+  </g>
+</svg>

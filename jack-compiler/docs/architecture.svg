@@ -1,0 +1,134 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760" role="img" aria-labelledby="title desc">
+  <title id="title">Compiler architecture</title>
+  <desc id="desc">Pipeline from Jack source through tokenizer, parser, symbol table and code generator to XML and VM output.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0b1220"/>
+      <stop offset="100%" stop-color="#101b31"/>
+    </linearGradient>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M 32 0 L 0 0 0 32" fill="none" stroke="#1e293b" stroke-width="1" opacity="0.5"/>
+    </pattern>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#60a5fa"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#34d399"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="760" fill="url(#bg)"/>
+  <rect width="1200" height="760" fill="url(#grid)"/>
+
+  <text x="48" y="58" font-family="Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif" font-size="34" font-weight="750" fill="#f8fafc">Compiler architecture</text>
+  <text x="48" y="88" font-family="Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif" font-size="16" fill="#94a3b8">One front end, two outputs: project 10 XML and project 11 Hack VM code.</text>
+
+  <!-- source -->
+  <rect x="48" y="112" width="1104" height="66" rx="14" fill="#101c30" stroke="#26364f"/>
+  <text x="70" y="139" font-family="Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif" font-size="13" font-weight="600" fill="#94a3b8">INPUT</text>
+  <text x="70" y="162" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="14" fill="#e2e8f0">Main.jack</text>
+  <text x="184" y="162" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-size="14" fill="#64748b">class Main { function void main() { ... } }</text>
+
+  <!-- row 1 -->
+  <g font-family="Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif">
+    <!-- tokenizer -->
+    <rect x="48" y="232" width="232" height="122" rx="16" fill="#0f2438" stroke="#155e75"/>
+    <rect x="48" y="232" width="232" height="34" rx="16" fill="#123348"/>
+    <rect x="48" y="250" width="232" height="16" fill="#123348"/>
+    <text x="70" y="255" font-size="12" font-weight="700" fill="#67e8f9">STAGE 1</text>
+    <text x="70" y="290" font-size="21" font-weight="700" fill="#f8fafc">Tokenizer</text>
+    <text x="70" y="316" font-size="13" fill="#94a3b8">Comments, whitespace, strings</text>
+    <text x="70" y="336" font-size="13" fill="#94a3b8">and the five token classes.</text>
+
+    <!-- parser -->
+    <rect x="324" y="232" width="232" height="122" rx="16" fill="#13243d" stroke="#1d4ed8"/>
+    <rect x="324" y="232" width="232" height="34" rx="16" fill="#17305a"/>
+    <rect x="324" y="250" width="232" height="16" fill="#17305a"/>
+    <text x="346" y="255" font-size="12" font-weight="700" fill="#93c5fd">STAGE 2</text>
+    <text x="346" y="290" font-size="21" font-weight="700" fill="#f8fafc">Parser</text>
+    <text x="346" y="316" font-size="13" fill="#94a3b8">Recursive descent over the</text>
+    <text x="346" y="336" font-size="13" fill="#94a3b8">full Jack grammar → AST.</text>
+
+    <!-- symbol table -->
+    <rect x="600" y="232" width="232" height="122" rx="16" fill="#1b1a38" stroke="#6d28d9"/>
+    <rect x="600" y="232" width="232" height="34" rx="16" fill="#261f4d"/>
+    <rect x="600" y="250" width="232" height="16" fill="#261f4d"/>
+    <text x="622" y="255" font-size="12" font-weight="700" fill="#c4b5fd">STAGE 3</text>
+    <text x="622" y="290" font-size="21" font-weight="700" fill="#f8fafc">Symbol table</text>
+    <text x="622" y="316" font-size="13" fill="#94a3b8">static, field, arg and var</text>
+    <text x="622" y="336" font-size="13" fill="#94a3b8">with per-kind indexes.</text>
+
+    <!-- codegen -->
+    <rect x="876" y="232" width="232" height="122" rx="16" fill="#0d2a22" stroke="#047857"/>
+    <rect x="876" y="232" width="232" height="34" rx="16" fill="#123a2d"/>
+    <rect x="876" y="250" width="232" height="16" fill="#123a2d"/>
+    <text x="898" y="255" font-size="12" font-weight="700" fill="#6ee7b7">STAGE 4</text>
+    <text x="898" y="290" font-size="21" font-weight="700" fill="#f8fafc">Code generator</text>
+    <text x="898" y="316" font-size="13" fill="#94a3b8">Walks the AST, emits VM</text>
+    <text x="898" y="336" font-size="13" fill="#94a3b8">commands through VMWriter.</text>
+  </g>
+
+  <!-- arrows row 1 -->
+  <g stroke="#64748b" stroke-width="2.5" fill="none">
+    <line x1="280" y1="293" x2="318" y2="293" marker-end="url(#arrow)"/>
+    <line x1="556" y1="293" x2="594" y2="293" marker-end="url(#arrow)"/>
+    <line x1="832" y1="293" x2="870" y2="293" marker-end="url(#arrow)"/>
+    <line x1="164" y1="178" x2="164" y2="226" marker-end="url(#arrow)"/>
+  </g>
+
+  <!-- branch cards -->
+  <g font-family="Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif">
+    <!-- xml writer -->
+    <rect x="324" y="430" width="232" height="104" rx="16" fill="#241a38" stroke="#7c3aed"/>
+    <text x="346" y="462" font-size="12" font-weight="700" fill="#c4b5fd">PROJECT 10</text>
+    <text x="346" y="492" font-size="20" font-weight="700" fill="#f8fafc">XML writer</text>
+    <text x="346" y="516" font-size="13" fill="#94a3b8">Token stream + parse tree</text>
+
+    <!-- vm writer -->
+    <rect x="876" y="430" width="232" height="104" rx="16" fill="#0d2a22" stroke="#059669"/>
+    <text x="898" y="462" font-size="12" font-weight="700" fill="#6ee7b7">PROJECT 11</text>
+    <text x="898" y="492" font-size="20" font-weight="700" fill="#f8fafc">VM writer</text>
+    <text x="898" y="516" font-size="13" fill="#94a3b8">push / pop / call / labels</text>
+  </g>
+
+  <!-- arrows down -->
+  <g stroke="#a78bfa" stroke-width="2.5" fill="none">
+    <line x1="440" y1="354" x2="440" y2="424" marker-end="url(#arrow)"/>
+  </g>
+  <g stroke="#34d399" stroke-width="2.5" fill="none">
+    <line x1="992" y1="354" x2="992" y2="424" marker-end="url(#arrow-green)"/>
+  </g>
+
+  <!-- outputs -->
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace">
+    <rect x="292" y="596" width="296" height="56" rx="12" fill="#1a1530" stroke="#5b21b6"/>
+    <text x="312" y="620" font-size="12" fill="#a78bfa">OUTPUT</text>
+    <text x="312" y="640" font-size="14" fill="#e9d5ff">Main.xml · MainT.xml</text>
+
+    <rect x="852" y="596" width="280" height="56" rx="12" fill="#0d2a22" stroke="#047857"/>
+    <text x="872" y="620" font-size="12" fill="#34d399">OUTPUT</text>
+    <text x="872" y="640" font-size="14" fill="#a7f3d0">Main.vm</text>
+  </g>
+  <g stroke="#64748b" stroke-width="2" fill="none">
+    <line x1="440" y1="534" x2="440" y2="590" marker-end="url(#arrow)"/>
+    <line x1="992" y1="534" x2="992" y2="590" marker-end="url(#arrow)"/>
+  </g>
+
+  <!-- legend -->
+  <g font-family="Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif" font-size="13">
+    <text x="48" y="708" font-size="12" font-weight="700" fill="#64748b">LEGEND</text>
+    <rect x="48" y="720" width="12" height="12" rx="3" fill="#155e75"/>
+    <text x="68" y="731" fill="#94a3b8">lexical</text>
+    <rect x="136" y="720" width="12" height="12" rx="3" fill="#1d4ed8"/>
+    <text x="156" y="731" fill="#94a3b8">syntax</text>
+    <rect x="220" y="720" width="12" height="12" rx="3" fill="#6d28d9"/>
+    <text x="240" y="731" fill="#94a3b8">semantics</text>
+    <rect x="330" y="720" width="12" height="12" rx="3" fill="#047857"/>
+    <text x="350" y="731" fill="#94a3b8">code generation</text>
+    <rect x="486" y="720" width="12" height="12" rx="3" fill="#b45309"/>
+    <text x="506" y="731" fill="#94a3b8">outputs</text>
+  </g>
+</svg>
